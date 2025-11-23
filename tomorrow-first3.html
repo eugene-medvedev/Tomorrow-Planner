@@ -1,0 +1,3091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tomorrow Planner</title>
+  <!-- Modern font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase (compat) SDKs: Auth + Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #e5e7eb; /* fallback */
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- THEMES (overall background) ---- */
+    body.theme-blue {
+      background: linear-gradient(135deg, #e0f2fe, #fefce8);
+    }
+    body.theme-green {
+      background: linear-gradient(135deg, #dcfce7, #ecfdf5);
+    }
+    body.theme-sand {
+      background: linear-gradient(135deg, #fef3c7, #fffbeb);
+    }
+    body.theme-lavender {
+      background: linear-gradient(135deg, #ede9fe, #fdf2ff);
+    }
+    body.theme-slate {
+      background: linear-gradient(135deg, #e5e7eb, #f9fafb);
+    }
+    body.theme-wood {
+      background: radial-gradient(circle at top, #fef3c7 0, #facc15 40%, #92400e 100%);
+    }
+    body.theme-paper {
+      background: radial-gradient(circle at top, #fefce8 0, #f3f4f6 60%, #e5e7eb 100%);
+    }
+    body.theme-journal {
+      background: linear-gradient(135deg, #f9fafb, #e5e7eb);
+    }
+    body.theme-pink {
+      background: linear-gradient(135deg, #fce7f3, #fee2e2);
+    }
+
+    /* Night themes */
+    body.theme-night-navy {
+      background: radial-gradient(circle at top, #0f172a 0, #020617 60%, #000 100%);
+      color: #e5e7eb;
+    }
+    body.theme-night-forest {
+      background: radial-gradient(circle at top, #022c22 0, #052e16 60%, #020617 100%);
+      color: #e5e7eb;
+    }
+    body.theme-night-purple {
+      background: radial-gradient(circle at top, #1e1b4b 0, #020617 60%, #000 100%);
+      color: #e5e7eb;
+    }
+    body.theme-night-amber {
+      background: radial-gradient(circle at top, #451a03 0, #030712 70%, #000 100%);
+      color: #e5e7eb;
+    }
+    body.theme-night-mono {
+      background: radial-gradient(circle at top, #111827 0, #020617 60%, #000 100%);
+      color: #e5e7eb;
+    }
+
+    .page-bubble {
+      max-width: 1280px;
+      margin: 1.25rem auto;
+      padding: 1.5rem 1.5rem 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 32px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      backdrop-filter: blur(18px);
+    }
+
+    /* Night page bubble overrides */
+    body.theme-night-navy .page-bubble,
+    body.theme-night-forest .page-bubble,
+    body.theme-night-purple .page-bubble,
+    body.theme-night-amber .page-bubble,
+    body.theme-night-mono .page-bubble {
+      background: rgba(15, 23, 42, 0.96);
+      border-color: #1f2937;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+    }
+
+    .app-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+    }
+
+    body.theme-night-navy header,
+    body.theme-night-forest header,
+    body.theme-night-purple header,
+    body.theme-night-amber header,
+    body.theme-night-mono header {
+      color: #e5e7eb;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      letter-spacing: -0.03em;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.35rem;
+    }
+
+    header .date-display {
+      font-size: 0.95rem;
+      color: #475569;
+      text-align: right;
+    }
+
+    body.theme-night-navy header .date-display,
+    body.theme-night-forest header .date-display,
+    body.theme-night-purple header .date-display,
+    body.theme-night-amber header .date-display,
+    body.theme-night-mono header .date-display {
+      color: #cbd5f5;
+    }
+
+    .print-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .print-btn:hover {
+      background: #e0f2fe;
+    }
+
+    body.theme-night-navy .print-btn,
+    body.theme-night-forest .print-btn,
+    body.theme-night-purple .print-btn,
+    body.theme-night-amber .print-btn,
+    body.theme-night-mono .print-btn {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #64748b;
+    }
+
+    body.theme-night-navy .print-btn:hover,
+    body.theme-night-forest .print-btn:hover,
+    body.theme-night-purple .print-btn:hover,
+    body.theme-night-amber .print-btn:hover,
+    body.theme-night-mono .print-btn:hover {
+      background: #111827;
+    }
+
+    .card {
+      border-radius: 18px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      backdrop-filter: blur(8px);
+      color: #0f172a;
+    }
+
+    /* Night card text */
+    body.theme-night-navy .card,
+    body.theme-night-forest .card,
+    body.theme-night-purple .card,
+    body.theme-night-amber .card,
+    body.theme-night-mono .card {
+      color: #e5e7eb;
+    }
+
+    /* base colors (overridden by themes below) */
+    .card-top    { background: rgba(219, 234, 254, 0.98); border-color: #bfdbfe; }
+    .card-plan   { background: rgba(224, 242, 254, 0.98); border-color: #bae6fd; }
+    .card-checklist { background: rgba(220, 252, 231, 0.98); border-color: #bbf7d0; }
+
+    .card-footer-nav {
+      background: rgba(239, 246, 255, 0.98);
+      border-color: #bfdbfe;
+    }
+    .card-footer-notes {
+      background: rgba(254, 249, 195, 0.98);
+      border-color: #facc15;
+    }
+    .card-footer-upcoming {
+      background: rgba(237, 233, 254, 0.98);
+      border-color: #c4b5fd;
+    }
+    .card-footer-health {
+      background: rgba(220, 252, 231, 0.98);
+      border-color: #bbf7d0;
+    }
+    .card-footer-theme {
+      background: rgba(248, 250, 252, 0.98);
+      border-color: #cbd5f5;
+    }
+
+    /* ---- Theme-specific card overrides ---- */
+
+    /* Blue */
+    body.theme-blue .card-top { background:#dbeafe; border-color:#bfdbfe; }
+    body.theme-blue .card-plan { background:#e0f2fe; border-color:#bae6fd; }
+    body.theme-blue .card-checklist { background:#dcfce7; border-color:#bbf7d0; }
+    body.theme-blue .card-footer-nav { background:#eff6ff; border-color:#bfdbfe; }
+    body.theme-blue .card-footer-notes { background:#fef9c3; border-color:#facc15; }
+    body.theme-blue .card-footer-upcoming { background:#e0f2fe; border-color:#bae6fd; }
+    body.theme-blue .card-footer-health { background:#dcfce7; border-color:#86efac; }
+    body.theme-blue .card-footer-theme { background:#f1f5f9; border-color:#cbd5f5; }
+
+    /* Green */
+    body.theme-green .card-top { background:#dcfce7; border-color:#bbf7d0; }
+    body.theme-green .card-plan { background:#ccfbf1; border-color:#99f6e4; }
+    body.theme-green .card-checklist { background:#ecfdf5; border-color:#bbf7d0; }
+    body.theme-green .card-footer-nav { background:#e0f2fe; border-color:#bfdbfe; }
+    body.theme-green .card-footer-notes { background:#fef9c3; border-color:#facc15; }
+    body.theme-green .card-footer-upcoming { background:#e0f2fe; border-color:#bae6fd; }
+    body.theme-green .card-footer-health { background:#dcfce7; border-color:#22c55e; }
+    body.theme-green .card-footer-theme { background:#f9fafb; border-color:#cbd5f5; }
+
+    /* Sand */
+    body.theme-sand .card-top { background:#fef3c7; border-color:#fcd34d; }
+    body.theme-sand .card-plan { background:#fffbeb; border-color:#fde68a; }
+    body.theme-sand .card-checklist { background:#dcfce7; border-color:#bbf7d0; }
+    body.theme-sand .card-footer-nav { background:#e0f2fe; border-color:#bfdbfe; }
+    body.theme-sand .card-footer-notes { background:#fef9c3; border-color:#facc15; }
+    body.theme-sand .card-footer-upcoming { background:#ede9fe; border-color:#c4b5fd; }
+    body.theme-sand .card-footer-health { background:#dcfce7; border-color:#22c55e; }
+    body.theme-sand .card-footer-theme { background:#f9fafb; border-color:#cbd5f5; }
+
+    /* Lavender */
+    body.theme-lavender .card-top { background:#ede9fe; border-color:#c4b5fd; }
+    body.theme-lavender .card-plan { background:#f5f3ff; border-color:#ddd6fe; }
+    body.theme-lavender .card-checklist { background:#fdf2ff; border-color:#f9a8d4; }
+    body.theme-lavender .card-footer-nav { background:#e0f2fe; border-color:#bfdbfe; }
+    body.theme-lavender .card-footer-notes { background:#fef9c3; border-color:#facc15; }
+    body.theme-lavender .card-footer-upcoming { background:#ede9fe; border-color:#c4b5fd; }
+    body.theme-lavender .card-footer-health { background:#dcfce7; border-color:#22c55e; }
+    body.theme-lavender .card-footer-theme { background:#f9fafb; border-color:#cbd5f5; }
+
+    /* Slate */
+    body.theme-slate .card-top { background:#e5e7eb; border-color:#d1d5db; }
+    body.theme-slate .card-plan { background:#f9fafb; border-color:#e5e7eb; }
+    body.theme-slate .card-checklist { background:#e0f2fe; border-color:#bfdbfe; }
+    body.theme-slate .card-footer-nav { background:#e5e7eb; border-color:#d1d5db; }
+    body.theme-slate .card-footer-notes { background:#fef3c7; border-color:#facc15; }
+    body.theme-slate .card-footer-upcoming { background:#ede9fe; border-color:#c4b5fd; }
+    body.theme-slate .card-footer-health { background:#dcfce7; border-color:#22c55e; }
+    body.theme-slate .card-footer-theme { background:#f9fafb; border-color:#cbd5f5; }
+
+    /* Wood */
+    body.theme-wood .card-top { background:#fef3c7; border-color:#fbbf24; }
+    body.theme-wood .card-plan { background:#fde68a; border-color:#f59e0b; }
+    body.theme-wood .card-checklist { background:#dcfce7; border-color:#16a34a; }
+    body.theme-wood .card-footer-nav { background:#fffbeb; border-color:#facc15; }
+    body.theme-wood .card-footer-notes { background:#fef3c7; border-color:#facc15; }
+    body.theme-wood .card-footer-upcoming { background:#e0f2fe; border-color:#bfdbfe; }
+    body.theme-wood .card-footer-health { background:#dcfce7; border-color:#22c55e; }
+    body.theme-wood .card-footer-theme { background:#f9fafb; border-color:#cbd5f5; }
+
+    /* Paper */
+    body.theme-paper .card-top { background:#fefce8; border-color:#facc15; }
+    body.theme-paper .card-plan { background:#f5f5f4; border-color:#e7e5e4; }
+    body.theme-paper .card-checklist { background:#e5e7eb; border-color:#d4d4d8; }
+    body.theme-paper .card-footer-nav { background:#fefce8; border-color:#facc15; }
+    body.theme-paper .card-footer-notes { background:#fef9c3; border-color:#facc15; }
+    body.theme-paper .card-footer-upcoming { background:#ede9fe; border-color:#c4b5fd; }
+    body.theme-paper .card-footer-health { background:#dcfce7; border-color:#22c55e; }
+    body.theme-paper .card-footer-theme { background:#f9fafb; border-color:#cbd5f5; }
+
+    /* Journal */
+    body.theme-journal .card-top { background:#fef3c7; border-color:#fbbf24; }
+    body.theme-journal .card-plan { background:#e5e7eb; border-color:#d1d5db; }
+    body.theme-journal .card-checklist { background:#e0f2fe; border-color:#bfdbfe; }
+    body.theme-journal .card-footer-nav { background:#fefce8; border-color:#facc15; }
+    body.theme-journal .card-footer-notes { background:#fef9c3; border-color:#facc15; }
+    body.theme-journal .card-footer-upcoming { background:#ede9fe; border-color:#c4b5fd; }
+    body.theme-journal .card-footer-health { background:#dcfce7; border-color:#22c55e; }
+    body.theme-journal .card-footer-theme { background:#f9fafb; border-color:#cbd5f5; }
+
+    /* Pink */
+    body.theme-pink .card-top { background:#fdf2f8; border-color:#f9a8d4; }
+    body.theme-pink .card-plan { background:#ffe4e6; border-color:#fb7185; }
+    body.theme-pink .card-checklist { background:#fce7f3; border-color:#f9a8d4; }
+    body.theme-pink .card-footer-nav { background:#fee2e2; border-color:#fecaca; }
+    body.theme-pink .card-footer-notes { background:#fef9c3; border-color:#facc15; }
+    body.theme-pink .card-footer-upcoming { background:#ede9fe; border-color:#c4b5fd; }
+    body.theme-pink .card-footer-health { background:#dcfce7; border-color:#22c55e; }
+    body.theme-pink .card-footer-theme { background:#f9fafb; border-color:#cbd5f5; }
+
+    /* Night navy */
+    body.theme-night-navy .card-top { background:#020617; border-color:#1d4ed8; }
+    body.theme-night-navy .card-plan { background:#020617; border-color:#0ea5e9; }
+    body.theme-night-navy .card-checklist { background:#022c22; border-color:#22c55e; }
+    body.theme-night-navy .card-footer-nav { background:#020617; border-color:#38bdf8; }
+    body.theme-night-navy .card-footer-notes { background:#450a0a; border-color:#f97316; }
+    body.theme-night-navy .card-footer-upcoming { background:#111827; border-color:#6366f1; }
+    body.theme-night-navy .card-footer-health { background:#022c22; border-color:#22c55e; }
+    body.theme-night-navy .card-footer-theme { background:#020617; border-color:#64748b; }
+
+    /* Night forest */
+    body.theme-night-forest .card-top { background:#022c22; border-color:#16a34a; }
+    body.theme-night-forest .card-plan { background:#064e3b; border-color:#22c55e; }
+    body.theme-night-forest .card-checklist { background:#022c22; border-color:#22c55e; }
+    body.theme-night-forest .card-footer-nav { background:#022c22; border-color:#4ade80; }
+    body.theme-night-forest .card-footer-notes { background:#3f6212; border-color:#bef264; }
+    body.theme-night-forest .card-footer-upcoming { background:#0f172a; border-color:#22c55e; }
+    body.theme-night-forest .card-footer-health { background:#064e3b; border-color:#22c55e; }
+    body.theme-night-forest .card-footer-theme { background:#020617; border-color:#4b5563; }
+
+    /* Night purple */
+    body.theme-night-purple .card-top { background:#1e1b4b; border-color:#a855f7; }
+    body.theme-night-purple .card-plan { background:#312e81; border-color:#6366f1; }
+    body.theme-night-purple .card-checklist { background:#4c1d95; border-color:#a855f7; }
+    body.theme-night-purple .card-footer-nav { background:#020617; border-color:#6366f1; }
+    body.theme-night-purple .card-footer-notes { background:#451a03; border-color:#f97316; }
+    body.theme-night-purple .card-footer-upcoming { background:#111827; border-color:#a855f7; }
+    body.theme-night-purple .card-footer-health { background:#4c1d95; border-color:#22c55e; }
+    body.theme-night-purple .card-footer-theme { background:#020617; border-color:#4b5563; }
+
+    /* Night amber */
+    body.theme-night-amber .card-top { background:#451a03; border-color:#f97316; }
+    body.theme-night-amber .card-plan { background:#78350f; border-color:#fbbf24; }
+    body.theme-night-amber .card-checklist { background:#064e3b; border-color:#22c55e; }
+    body.theme-night-amber .card-footer-nav { background:#111827; border-color:#f97316; }
+    body.theme-night-amber .card-footer-notes { background:#451a03; border-color:#fbbf24; }
+    body.theme-night-amber .card-footer-upcoming { background:#1f2937; border-color:#f97316; }
+    body.theme-night-amber .card-footer-health { background:#064e3b; border-color:#22c55e; }
+    body.theme-night-amber .card-footer-theme { background:#020617; border-color:#4b5563; }
+
+    /* Night mono */
+    body.theme-night-mono .card-top { background:#020617; border-color:#4b5563; }
+    body.theme-night-mono .card-plan { background:#030712; border-color:#6b7280; }
+    body.theme-night-mono .card-checklist { background:#111827; border-color:#9ca3af; }
+    body.theme-night-mono .card-footer-nav { background:#020617; border-color:#6b7280; }
+    body.theme-night-mono .card-footer-notes { background:#111827; border-color:#9ca3af; }
+    body.theme-night-mono .card-footer-upcoming { background:#020617; border-color:#6b7280; }
+    body.theme-night-mono .card-footer-health { background:#111827; border-color:#9ca3af; }
+    body.theme-night-mono .card-footer-theme { background:#020617; border-color:#4b5563; }
+
+    .card-section-title {
+      margin: 0 0 0.35rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .goals-row-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .goals-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .goals-row-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .column-subtitle {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    body.theme-night-navy .column-subtitle,
+    body.theme-night-forest .column-subtitle,
+    body.theme-night-purple .column-subtitle,
+    body.theme-night-amber .column-subtitle,
+    body.theme-night-mono .column-subtitle {
+      color: #94a3b8;
+    }
+
+    .goals-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .goals-row-line {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: nowrap;
+    }
+
+    .goal-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      background: #f9fafb;
+      color: #0f172a;
+      font-size: 0.85rem;
+      cursor: grab;
+      user-select: none;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+      max-width: 13rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .goal-bubble:hover {
+      background: #e0f2fe;
+      box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.6);
+      transform: translateY(-1px);
+      border-color: rgba(129, 140, 248, 0.9);
+    }
+
+    .goal-bubble.active {
+      background: #e0e7ff;
+      border-color: #818cf8;
+      box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.9);
+    }
+
+    body.theme-night-navy .goal-bubble,
+    body.theme-night-forest .goal-bubble,
+    body.theme-night-purple .goal-bubble,
+    body.theme-night-amber .goal-bubble,
+    body.theme-night-mono .goal-bubble {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    .goal-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .goal-badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #4f46e5;
+      border: 1px solid #bfdbfe;
+    }
+
+    body.theme-night-navy .goal-badge,
+    body.theme-night-forest .goal-badge,
+    body.theme-night-purple .goal-badge,
+    body.theme-night-amber .goal-badge,
+    body.theme-night-mono .goal-badge {
+      background: #111827;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .goal-edit-btn {
+      border: none;
+      background: transparent;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #6b7280;
+      padding: 0;
+    }
+
+    .goal-edit-btn:hover {
+      color: #4f46e5;
+    }
+
+    .main-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      min-height: 340px;
+    }
+
+    @media (max-width: 900px) {
+      .main-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .column-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .droptarget {
+      border: 1px dashed rgba(148, 163, 184, 0.8);
+      border-radius: 14px;
+      padding: 0.75rem;
+      min-height: 130px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .droptarget.drag-over {
+      border-color: #7c3aed;
+      background: #f5f3ff;
+    }
+
+    .goal-card {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 0.6rem 0.7rem;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    body.theme-night-navy .goal-card,
+    body.theme-night-forest .goal-card,
+    body.theme-night-purple .goal-card,
+    body.theme-night-amber .goal-card,
+    body.theme-night-mono .goal-card {
+      background: #020617;
+      border-color: #4b5563;
+      color: #e5e7eb;
+    }
+
+    .goal-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .goal-card-title {
+      font-weight: 500;
+    }
+
+    .goal-card-remove {
+      border: none;
+      background: transparent;
+      color: #6b7280;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.1rem 0.3rem;
+      border-radius: 6px;
+    }
+
+    .goal-card-remove:hover {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .goal-card ul {
+      padding-left: 1.1rem;
+      margin: 0;
+      font-size: 0.8rem;
+      color: #4b5563;
+    }
+
+    body.theme-night-navy .goal-card ul,
+    body.theme-night-forest .goal-card ul,
+    body.theme-night-purple .goal-card ul,
+    body.theme-night-amber .goal-card ul,
+    body.theme-night-mono .goal-card ul {
+      color: #e5e7eb;
+    }
+
+    .checklist-item {
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      justify-content: space-between;
+    }
+
+    .checklist-item label {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex: 1;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #4f46e5;
+    }
+
+    .schedule-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .schedule-btn:hover {
+      background: #e0f2fe;
+    }
+
+    body.theme-night-navy .schedule-btn,
+    body.theme-night-forest .schedule-btn,
+    body.theme-night-purple .schedule-btn,
+    body.theme-night-amber .schedule-btn,
+    body.theme-night-mono .schedule-btn {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    body.theme-night-navy .schedule-btn:hover,
+    body.theme-night-forest .schedule-btn:hover,
+    body.theme-night-purple .schedule-btn:hover,
+    body.theme-night-amber .schedule-btn:hover,
+    body.theme-night-mono .schedule-btn:hover {
+      background: #111827;
+    }
+
+    .checklist-empty {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    body.theme-night-navy .checklist-empty,
+    body.theme-night-forest .checklist-empty,
+    body.theme-night-purple .checklist-empty,
+    body.theme-night-amber .checklist-empty,
+    body.theme-night-mono .checklist-empty {
+      color: #9ca3af;
+    }
+
+    .new-goal-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.4rem;
+      align-items: center;
+    }
+
+    .new-goal-form input,
+    .new-goal-form textarea {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      min-width: 160px;
+    }
+
+    .new-goal-form textarea {
+      border-radius: 12px;
+      min-width: 260px;
+      min-height: 40px;
+      resize: vertical;
+    }
+
+    .new-goal-form button {
+      border-radius: 999px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 500;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+    }
+
+    .new-goal-form button:hover {
+      background: #4338ca;
+    }
+
+    .add-task-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      align-items: center;
+    }
+
+    .add-task-inline input {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      min-width: 220px;
+    }
+
+    .add-task-inline button {
+      border-radius: 999px;
+      border: none;
+      background: #0ea5e9;
+      color: white;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 500;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+    }
+
+    .add-task-inline button:hover {
+      background: #0284c7;
+    }
+
+    footer {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .calendar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .date-nav button {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .date-nav button:hover {
+      background: #e0f2fe;
+    }
+
+    body.theme-night-navy .date-nav button,
+    body.theme-night-forest .date-nav button,
+    body.theme-night-purple .date-nav button,
+    body.theme-night-amber .date-nav button,
+    body.theme-night-mono .date-nav button {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    body.theme-night-navy .date-nav button:hover,
+    body.theme-night-forest .date-nav button:hover,
+    body.theme-night-purple .date-nav button:hover,
+    body.theme-night-amber .date-nav button:hover,
+    body.theme-night-mono .date-nav button:hover {
+      background: #111827;
+    }
+
+    .date-nav-current {
+      font-weight: 500;
+    }
+
+    .stats {
+      color: #6b7280;
+    }
+
+    body.theme-night-navy .stats,
+    body.theme-night-forest .stats,
+    body.theme-night-purple .stats,
+    body.theme-night-amber .stats,
+    body.theme-night-mono .stats {
+      color: #9ca3af;
+    }
+
+    .carry-forward-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.5);
+      background: #ecfdf3;
+      color: #166534;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .carry-forward-btn:hover {
+      background: #bbf7d0;
+    }
+
+    body.theme-night-navy .carry-forward-btn,
+    body.theme-night-forest .carry-forward-btn,
+    body.theme-night-purple .carry-forward-btn,
+    body.theme-night-amber .carry-forward-btn,
+    body.theme-night-mono .carry-forward-btn {
+      background: #022c22;
+      color: #bbf7d0;
+      border-color: #22c55e;
+    }
+
+    .hint-text {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+    }
+
+    body.theme-night-navy .hint-text,
+    body.theme-night-forest .hint-text,
+    body.theme-night-purple .hint-text,
+    body.theme-night-amber .hint-text,
+    body.theme-night-mono .hint-text {
+      color: #94a3b8;
+    }
+
+    #daily-notes {
+      width: 100%;
+      min-height: 70px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      padding: 0.5rem 0.6rem;
+      font-size: 0.85rem;
+      resize: none;
+      overflow: hidden;
+      background: #fefce8;
+    }
+
+    body.theme-night-navy #daily-notes,
+    body.theme-night-forest #daily-notes,
+    body.theme-night-purple #daily-notes,
+    body.theme-night-amber #daily-notes,
+    body.theme-night-mono #daily-notes {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    #upcoming-list {
+      font-size: 0.8rem;
+      color: #4b5563;
+    }
+
+    body.theme-night-navy #upcoming-list,
+    body.theme-night-forest #upcoming-list,
+    body.theme-night-purple #upcoming-list,
+    body.theme-night-amber #upcoming-list,
+    body.theme-night-mono #upcoming-list {
+      color: #e5e7eb;
+    }
+
+    #upcoming-list ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    #upcoming-list li {
+      margin-bottom: 0.25rem;
+    }
+
+    #upcoming-list strong {
+      font-weight: 600;
+    }
+
+    /* ---- New health row ---- */
+    .health-row {
+      margin-top: 0.25rem;
+      display: grid;
+      grid-template-columns: 1.1fr 1.1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 900px) {
+      .health-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .health-section {
+      border-radius: 14px;
+      border: 1px dashed rgba(148, 163, 184, 0.8);
+      padding: 0.6rem 0.7rem;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    body.theme-night-navy .health-section,
+    body.theme-night-forest .health-section,
+    body.theme-night-purple .health-section,
+    body.theme-night-amber .health-section,
+    body.theme-night-mono .health-section {
+      background: rgba(15, 23, 42, 0.8);
+      border-color: #4b5563;
+    }
+
+    .health-section h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .health-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+    }
+
+    .health-fields input[type="text"],
+    .health-fields input[type="number"],
+    .health-fields select {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      min-width: 0;
+    }
+
+    body.theme-night-navy .health-fields input[type="text"],
+    body.theme-night-navy .health-fields input[type="number"],
+    body.theme-night-navy .health-fields select,
+    body.theme-night-forest .health-fields input[type="text"],
+    body.theme-night-forest .health-fields input[type="number"],
+    body.theme-night-forest .health-fields select,
+    body.theme-night-purple .health-fields input[type="text"],
+    body.theme-night-purple .health-fields input[type="number"],
+    body.theme-night-purple .health-fields select,
+    body.theme-night-amber .health-fields input[type="text"],
+    body.theme-night-amber .health-fields input[type="number"],
+    body.theme-night-amber .health-fields select,
+    body.theme-night-mono .health-fields input[type="text"],
+    body.theme-night-mono .health-fields input[type="number"],
+    body.theme-night-mono .health-fields select {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .health-fields textarea {
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
+      min-height: 40px;
+      resize: none;
+      overflow: hidden;
+    }
+
+    body.theme-night-navy .health-fields textarea,
+    body.theme-night-forest .health-fields textarea,
+    body.theme-night-purple .health-fields textarea,
+    body.theme-night-amber .health-fields textarea,
+    body.theme-night-mono .health-fields textarea {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    .rating-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+    }
+
+    .rating-label input[type="range"] {
+      flex: 1;
+    }
+
+    .rating-label span {
+      min-width: 1.5rem;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .activity-hint {
+      font-size: 0.75rem;
+      color: #4b5563;
+      margin-top: -0.2rem;
+    }
+
+    body.theme-night-navy .activity-hint,
+    body.theme-night-forest .activity-hint,
+    body.theme-night-purple .activity-hint,
+    body.theme-night-amber .activity-hint,
+    body.theme-night-mono .activity-hint {
+      color: #94a3b8;
+    }
+
+    .profile-fields {
+      margin-top: 0.5rem;
+      border-top: 1px dashed rgba(148, 163, 184, 0.6);
+      padding-top: 0.4rem;
+    }
+
+    .profile-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .profile-row input,
+    .profile-row select {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    body.theme-night-navy .profile-row input,
+    body.theme-night-navy .profile-row select,
+    body.theme-night-forest .profile-row input,
+    body.theme-night-forest .profile-row select,
+    body.theme-night-purple .profile-row input,
+    body.theme-night-purple .profile-row select,
+    body.theme-night-amber .profile-row input,
+    body.theme-night-amber .profile-row select,
+    body.theme-night-mono .profile-row input,
+    body.theme-night-mono .profile-row select {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    #bmr-display {
+      font-size: 0.8rem;
+      margin-top: 0.15rem;
+    }
+
+    /* ---- Mini calendars & projections ---- */
+    .health-summary {
+      margin-top: 0.75rem;
+      border-radius: 14px;
+      border: 1px dashed rgba(148, 163, 184, 0.8);
+      padding: 0.6rem 0.7rem;
+      background: rgba(255, 255, 255, 0.7);
+      font-size: 0.78rem;
+    }
+
+    body.theme-night-navy .health-summary,
+    body.theme-night-forest .health-summary,
+    body.theme-night-purple .health-summary,
+    body.theme-night-amber .health-summary,
+    body.theme-night-mono .health-summary {
+      background: rgba(15, 23, 42, 0.8);
+      border-color: #4b5563;
+    }
+
+    .mini-calendars {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 900px) {
+      .mini-calendars {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .mini-calendar-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .mini-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.2rem;
+    }
+
+    .mini-day {
+      border-radius: 6px;
+      height: 20px;
+      text-align: center;
+      font-size: 0.65rem;
+      line-height: 20px;
+      color: #111827;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      cursor: pointer;
+    }
+
+    .mini-day.no-data {
+      background: #e5e7eb;
+      color: #6b7280;
+    }
+
+    body.theme-night-navy .mini-day.no-data,
+    body.theme-night-forest .mini-day.no-data,
+    body.theme-night-purple .mini-day.no-data,
+    body.theme-night-amber .mini-day.no-data,
+    body.theme-night-mono .mini-day.no-data {
+      background: #020617;
+      color: #6b7280;
+      border-color: #4b5563;
+    }
+
+    .projection {
+      margin-top: 0.5rem;
+    }
+
+    .projection-row {
+      margin-bottom: 0.2rem;
+    }
+
+    #calorie-summary strong {
+      font-weight: 700;
+    }
+
+    /* ---- Theme & save controls ---- */
+    .theme-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      justify-content: flex-start;
+      font-size: 0.8rem;
+    }
+
+    .theme-selector label {
+      font-size: 0.8rem;
+      color: #4b5563;
+      margin-right: 0.25rem;
+    }
+
+    body.theme-night-navy .theme-selector label,
+    body.theme-night-forest .theme-selector label,
+    body.theme-night-purple .theme-selector label,
+    body.theme-night-amber .theme-selector label,
+    body.theme-night-mono .theme-selector label {
+      color: #e5e7eb;
+    }
+
+    .theme-button {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      cursor: pointer;
+    }
+
+    .theme-button.active {
+      background: #4f46e5;
+      color: white;
+      border-color: #4f46e5;
+    }
+
+    body.theme-night-navy .theme-button,
+    body.theme-night-forest .theme-button,
+    body.theme-night-purple .theme-button,
+    body.theme-night-amber .theme-button,
+    body.theme-night-mono .theme-button {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .save-controls {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #4b5563;
+    }
+
+    body.theme-night-navy .save-controls,
+    body.theme-night-forest .save-controls,
+    body.theme-night-purple .save-controls,
+    body.theme-night-amber .save-controls,
+    body.theme-night-mono .save-controls {
+      color: #e5e7eb;
+    }
+
+    .save-controls button {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .save-controls button:hover {
+      background: #e0f2fe;
+    }
+
+    body.theme-night-navy .save-controls button,
+    body.theme-night-forest .save-controls button,
+    body.theme-night-purple .save-controls button,
+    body.theme-night-amber .save-controls button,
+    body.theme-night-mono .save-controls button {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .save-controls label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+    }
+
+    .save-controls input[type="file"] {
+      display: none;
+    }
+
+    .auth-bar {
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #4b5563;
+    }
+
+    body.theme-night-navy .auth-bar,
+    body.theme-night-forest .auth-bar,
+    body.theme-night-purple .auth-bar,
+    body.theme-night-amber .auth-bar,
+    body.theme-night-mono .auth-bar {
+      color: #e5e7eb;
+    }
+
+    .auth-bar input {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+    }
+
+    body.theme-night-navy .auth-bar input,
+    body.theme-night-forest .auth-bar input,
+    body.theme-night-purple .auth-bar input,
+    body.theme-night-amber .auth-bar input,
+    body.theme-night-mono .auth-bar input {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .auth-bar button {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #ffffff;
+      color: #0f172a;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .auth-bar button:hover {
+      background: #e0f2fe;
+    }
+
+    body.theme-night-navy .auth-bar button,
+    body.theme-night-forest .auth-bar button,
+    body.theme-night-purple .auth-bar button,
+    body.theme-night-amber .auth-bar button,
+    body.theme-night-mono .auth-bar button {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .auth-status {
+      font-weight: 500;
+    }
+
+    .upcoming-link {
+      border: none;
+      background: transparent;
+      text-decoration: underline;
+      cursor: pointer;
+      font: inherit;
+      padding: 0;
+      color: inherit;
+    }
+
+    .upcoming-link:hover {
+      text-decoration-thickness: 2px;
+    }
+
+    .goals-row::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .goals-row::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.6);
+      border-radius: 999px;
+    }
+
+    /* Print summary layout */
+    .print-summary {
+      display: none;
+      max-width: 800px;
+      margin: 1rem auto;
+      padding: 1.5rem;
+      background: #ffffff;
+      color: #000000;
+      font-size: 0.9rem;
+    }
+
+    .print-summary h1 {
+      margin-top: 0;
+      font-size: 1.4rem;
+    }
+
+    .print-summary h2 {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .print-summary h3 {
+      margin-top: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .print-summary pre {
+      background: #f3f4f6;
+      padding: 0.75rem;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+
+    body.print-mode .page-bubble {
+      display: none;
+    }
+
+    body.print-mode .print-summary {
+      display: block;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .page-bubble {
+        display: none !important;
+      }
+      .print-summary {
+        display: block !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-bubble">
+    <div class="app-shell">
+      <header>
+        <div class="header-left">
+          <h1>Tomorrow Planner</h1>
+        </div>
+        <div class="header-right">
+          <div class="date-display" id="header-date"></div>
+          <button type="button" id="print-summary-btn" class="print-btn">🖨 Print summary</button>
+        </div>
+      </header>
+
+      <!-- Auth bar (login / register / logout) -->
+      <div class="auth-bar" id="auth-bar">
+        <div id="auth-logged-out">
+          <span>Cloud sync:</span>
+          <input type="email" id="auth-email" placeholder="Email" />
+          <input type="password" id="auth-password" placeholder="Password" />
+          <button type="button" id="auth-register-btn">Register</button>
+          <button type="button" id="auth-login-btn">Log in</button>
+        </div>
+        <div id="auth-logged-in" style="display:none;">
+          <span class="auth-status" id="auth-user-label"></span>
+          <button type="button" id="auth-logout-btn">Log out</button>
+        </div>
+      </div>
+      <div class="hint-text" id="auth-hint">
+        Log in to sync your planner to the cloud. If you stay logged out, everything is saved only on this device.
+      </div>
+
+      <!-- Top row: goals as bubbles + new goal form -->
+      <div class="card card-top">
+        <div class="goals-row-wrapper">
+          <div class="goals-row-header">
+            <h2>🎯 Pick what Future You wants to do</h2>
+            <span class="column-subtitle">Click or drag bubbles into “Tomorrow’s Plan” · Edit any bubble</span>
+          </div>
+          <div class="goals-row" id="goals-row"></div>
+
+          <form class="new-goal-form" id="new-goal-form">
+            <input
+              type="text"
+              id="new-goal-name"
+              placeholder="New tomorrow goal (e.g. Meal prep, Study cardio)"
+              required
+            />
+            <textarea
+              id="new-goal-tasks"
+              placeholder="What needs to happen today? (comma-separated tasks)"
+              required
+            ></textarea>
+            <button type="submit">Add goal</button>
+          </form>
+          <div class="hint-text">
+            Tasks like “Lay out clothes, Charge headphones, Check gym hours” will be split into separate checklist items.
+          </div>
+        </div>
+      </div>
+
+      <!-- Main area: tomorrow plan + today checklist -->
+      <div class="main-columns">
+        <div class="card card-plan">
+          <div class="column-header">
+            <div>
+              <h2>🌅 Tomorrow’s Plan</h2>
+              <div class="column-subtitle">Goals you’ve committed to for the next day</div>
+            </div>
+          </div>
+          <div id="tomorrow-plan" class="droptarget"></div>
+          <div class="hint-text">
+            Drag a bubble here, or click a bubble to toggle it on/off.
+          </div>
+        </div>
+
+        <div class="card card-checklist">
+          <div class="column-header">
+            <div>
+              <h2>✅ Today’s Checklist</h2>
+              <div class="column-subtitle">Prerequisites for your tomorrow goals + extra one-off tasks</div>
+            </div>
+          </div>
+          <div id="checklist"></div>
+
+          <!-- Add extra checklist bullet without making a new goal -->
+          <form class="add-task-inline" id="new-checklist-task-form">
+            <input
+              type="text"
+              id="new-checklist-task"
+              placeholder="Add a one-off task just for today"
+            />
+            <button type="submit">Add task</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Footer / multiple bubbles -->
+      <footer>
+        <!-- 1. Day navigation / stats / carry forward -->
+        <div class="card card-footer-nav">
+          <h3 class="card-section-title">📆 Day navigation & checklist summary</h3>
+          <div class="calendar-row">
+            <div class="date-nav">
+              <button type="button" id="prev-day-btn">◀ Prev day</button>
+              <span class="date-nav-current" id="current-day-label"></span>
+              <button type="button" id="next-day-btn">Next day ▶</button>
+            </div>
+
+            <div class="stats" id="task-stats"></div>
+
+            <button type="button" class="carry-forward-btn" id="carry-forward-btn">
+              Carry incomplete tasks to next day
+            </button>
+          </div>
+          <div class="hint-text">
+            Use the arrows to review other days. Carry forward will copy any unchecked tasks (including one-off ones) into the next day’s checklist.
+          </div>
+        </div>
+
+        <!-- 2. Daily notes bubble -->
+        <div class="card card-footer-notes">
+          <h3 class="card-section-title">📝 Daily notes</h3>
+          <textarea id="daily-notes" placeholder="Jot down anything about this day..."></textarea>
+        </div>
+
+        <!-- 3. Upcoming scheduled tasks bubble -->
+        <div class="card card-footer-upcoming">
+          <h3 class="card-section-title">📌 Upcoming scheduled tasks</h3>
+          <div id="upcoming-list"></div>
+        </div>
+
+        <!-- 4. Exercise / Diet / mini calendars / projections bubble -->
+        <div class="card card-footer-health">
+          <h3 class="card-section-title">💪 Exercise & 🍽 Diet overview</h3>
+          <!-- health row: Exercise & Diet -->
+          <div class="health-row">
+            <div class="health-section" id="exercise-section">
+              <h3>Exercise</h3>
+              <div class="health-fields">
+                <label>Exercise details:</label>
+                <textarea id="exercise-notes" placeholder="What did you do? Sets, reps, distance, etc."></textarea>
+                <label class="rating-label">
+                  Exercise rating:
+                  <input type="range" id="exercise-rating" min="1" max="10">
+                  <span id="exercise-rating-value">-</span>
+                </label>
+                <div class="activity-hint" id="exercise-activity-label"></div>
+              </div>
+              <div class="profile-fields">
+                <div class="profile-row">
+                  <input type="number" id="profile-weight" placeholder="Weight (lb)">
+                  <input type="number" id="profile-height" placeholder="Height (in)">
+                </div>
+                <div class="profile-row">
+                  <input type="number" id="profile-age" placeholder="Age (years)">
+                  <select id="profile-sex">
+                    <option value="">Sex</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="hint-text" id="bmr-display">BMR: basic – · adjusted –</div>
+              </div>
+            </div>
+
+            <div class="health-section" id="diet-section">
+              <h3>Diet & calories</h3>
+              <div class="health-fields">
+                <label>
+                  Target calories:
+                  <input type="number" id="diet-target" min="0" step="10" placeholder="e.g. 2200">
+                </label>
+                <label>
+                  Calories consumed:
+                  <input type="number" id="diet-consumed" min="0" step="10">
+                </label>
+                <label class="rating-label">
+                  Food day rating:
+                  <input type="range" id="diet-rating" min="1" max="10">
+                  <span id="diet-rating-value">-</span>
+                </label>
+                <div class="activity-hint" id="diet-quality-label"></div>
+                <div class="hint-text" id="diet-delta-display">Today’s calories: –</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Health summary: mini calendars + projections -->
+          <div class="health-summary">
+            <div class="mini-calendars">
+              <div class="mini-calendar">
+                <div class="mini-calendar-title">Exercise past 4 weeks</div>
+                <div class="mini-calendar-grid" id="exercise-mini-calendar"></div>
+              </div>
+              <div class="mini-calendar">
+                <div class="mini-calendar-title">Food past 4 weeks</div>
+                <div class="mini-calendar-grid" id="diet-mini-calendar"></div>
+              </div>
+            </div>
+            <div class="projection">
+              <div class="projection-row" id="calorie-summary"></div>
+              <div class="projection-row" id="weight-projection"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Theme & backup bubble -->
+        <div class="card card-footer-theme">
+          <h3 class="card-section-title">🎨 Themes & backup</h3>
+          <div class="theme-selector">
+            <label>Color theme:</label>
+            <button type="button" class="theme-button" data-theme="blue">Calm blue</button>
+            <button type="button" class="theme-button" data-theme="green">Fresh green</button>
+            <button type="button" class="theme-button" data-theme="sand">Warm sand</button>
+            <button type="button" class="theme-button" data-theme="lavender">Soft lavender</button>
+            <button type="button" class="theme-button" data-theme="slate">Clean slate</button>
+            <button type="button" class="theme-button" data-theme="wood">Wood mode</button>
+            <button type="button" class="theme-button" data-theme="paper">Paper mode</button>
+            <button type="button" class="theme-button" data-theme="journal">Journal mode</button>
+            <button type="button" class="theme-button" data-theme="pink">Hot pink</button>
+            <button type="button" class="theme-button" data-theme="night-navy">Navy night</button>
+            <button type="button" class="theme-button" data-theme="night-forest">Forest night</button>
+            <button type="button" class="theme-button" data-theme="night-purple">Purple night</button>
+            <button type="button" class="theme-button" data-theme="night-amber">Amber night</button>
+            <button type="button" class="theme-button" data-theme="night-mono">Mono night</button>
+          </div>
+
+          <div class="save-controls">
+            <span>Backup:</span>
+            <button type="button" id="save-state-btn">Save backup file</button>
+            <label for="load-state-input">
+              Load backup
+              <input type="file" id="load-state-input" accept="application/json" />
+            </label>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Hidden print summary container -->
+  <div class="print-summary" id="print-summary"></div>
+
+  <script>
+    // ---------- Utilities ----------
+    function formatDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatHumanDate(date) {
+      return date.toLocaleDateString(undefined, {
+        weekday: "long",
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function parseDateKey(key) {
+      const [y, m, d] = key.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    // 4 weeks = 28 days back
+    function getRecentDateKeys(anchorDate, daysBack = 27) {
+      const keys = [];
+      const base = new Date(
+        anchorDate.getFullYear(),
+        anchorDate.getMonth(),
+        anchorDate.getDate()
+      );
+      for (let i = daysBack; i >= 0; i--) {
+        const d = new Date(
+          base.getFullYear(),
+          base.getMonth(),
+          base.getDate() - i
+        );
+        keys.push(formatDateKey(d));
+      }
+      return keys;
+    }
+
+    function autoResizeTextarea(el) {
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    // Sounds disabled
+    function playSound(type) {
+      // no-op
+    }
+
+    // ---------- Default goals ----------
+    const DEFAULT_GOALS = [
+      {
+        id: "workout",
+        name: "Workout at the gym",
+        todayTasks: [
+          "Lay out gym clothes",
+          "Charge headphones",
+          "Check gym hours",
+          "Block time in calendar for workout"
+        ]
+      },
+      {
+        id: "protein_shake",
+        name: "Have protein/creatine shake after workout",
+        todayTasks: [
+          "Make sure you have protein powder",
+          "Make sure you have creatine",
+          "Clean shaker bottle",
+          "Put water or milk in the fridge to chill"
+        ]
+      },
+      {
+        id: "early_wake",
+        name: "Wake up early tomorrow",
+        todayTasks: [
+          "Set alarm for tomorrow",
+          "Decide bedtime",
+          "Put phone or clock away from bed",
+          "Plan breakfast"
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = "tomorrowPlannerState_v8";
+
+    let state = {
+      goals: DEFAULT_GOALS,
+      days: {},
+      theme: "blue",
+      futureTasks: {}, // dateKey -> [task, ...]
+      profile: {
+        sex: "",
+        age: null,
+        weightLbs: null,
+        heightIn: null
+      },
+      defaultTargetCalories: null
+    };
+
+    let currentDate = new Date();
+
+    function ensureProfileDefaults() {
+      if (!state.profile) {
+        state.profile = {
+          sex: "",
+          age: null,
+          weightLbs: null,
+          heightIn: null
+        };
+      } else {
+        if (typeof state.profile.sex === "undefined") state.profile.sex = "";
+        if (typeof state.profile.age === "undefined") state.profile.age = null;
+        if (typeof state.profile.weightLbs === "undefined") state.profile.weightLbs = null;
+        if (typeof state.profile.heightIn === "undefined") state.profile.heightIn = null;
+      }
+      if (typeof state.defaultTargetCalories === "undefined") {
+        state.defaultTargetCalories = null;
+      }
+    }
+
+    // ---------- Local persistence ----------
+    function loadStateLocal() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.goals && parsed.days) {
+          state = parsed;
+        }
+        if (!state.theme) state.theme = "blue";
+        if (!state.futureTasks) state.futureTasks = {};
+        ensureProfileDefaults();
+      } catch (e) {
+        console.warn("Failed to load local state, using defaults", e);
+      }
+    }
+
+    function saveStateLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getDayData(dateKey) {
+      if (!state.days[dateKey]) {
+        state.days[dateKey] = {
+          selectedGoalIds: [],
+          carriedTasks: [],
+          customTasks: [],
+          completed: {},
+          notes: "",
+          exercise: {
+            done: false,
+            type: "",
+            rating: null
+          },
+          diet: {
+            targetCalories: null,
+            consumedCalories: null,
+            rating: null
+          }
+        };
+      } else {
+        const d = state.days[dateKey];
+        if (!d.carriedTasks) d.carriedTasks = [];
+        if (!d.customTasks) d.customTasks = [];
+        if (!d.completed) d.completed = {};
+        if (typeof d.notes !== "string") d.notes = "";
+        if (!d.exercise) {
+          d.exercise = { done: false, type: "", rating: null };
+        } else {
+          if (typeof d.exercise.done === "undefined") d.exercise.done = false;
+          if (typeof d.exercise.type === "undefined") d.exercise.type = "";
+          if (typeof d.exercise.rating === "undefined") d.exercise.rating = null;
+        }
+        if (!d.diet) {
+          d.diet = { targetCalories: null, consumedCalories: null, rating: null };
+        } else {
+          if (typeof d.diet.targetCalories === "undefined") d.diet.targetCalories = null;
+          if (typeof d.diet.consumedCalories === "undefined") d.diet.consumedCalories = null;
+          if (typeof d.diet.rating === "undefined") d.diet.rating = null;
+        }
+      }
+      return state.days[dateKey];
+    }
+
+    function getGoalsMap() {
+      const map = {};
+      state.goals.forEach(g => {
+        map[g.id] = g;
+      });
+      return map;
+    }
+
+    // ---------- Firebase setup ----------
+    let firebaseEnabled = false;
+    let auth = null;
+    let db = null;
+    let currentUser = null;
+
+    function updateAuthUI() {
+      const outEl = document.getElementById("auth-logged-out");
+      const inEl = document.getElementById("auth-logged-in");
+      const userLabel = document.getElementById("auth-user-label");
+      const hintEl = document.getElementById("auth-hint");
+
+      if (!firebaseEnabled) {
+        if (outEl) outEl.style.display = "none";
+        if (inEl) inEl.style.display = "none";
+        if (hintEl) hintEl.textContent =
+          "Cloud sync is disabled (Firebase not configured). Everything is saved only on this device.";
+        return;
+      }
+
+      if (currentUser) {
+        if (outEl) outEl.style.display = "none";
+        if (inEl) inEl.style.display = "flex";
+        if (userLabel) userLabel.textContent = `Signed in as ${currentUser.email}`;
+        if (hintEl) hintEl.textContent =
+          "Your planner is synced to the cloud for this account.";
+      } else {
+        if (outEl) outEl.style.display = "flex";
+        if (inEl) inEl.style.display = "none";
+        if (hintEl) hintEl.textContent =
+          "Log in to sync your planner to the cloud. If you stay logged out, everything is saved only on this device.";
+      }
+    }
+
+    async function saveStateRemote() {
+      if (!firebaseEnabled || !currentUser || !db) return;
+      try {
+        await db.collection("users").doc(currentUser.uid).set({ state }, { merge: true });
+      } catch (e) {
+        console.error("Error saving remote state", e);
+      }
+    }
+
+    function saveState() {
+      saveStateLocal();
+      saveStateRemote();
+    }
+
+    async function loadUserStateFromFirestore(user) {
+      if (!firebaseEnabled || !db || !user) return;
+      try {
+        const docRef = db.collection("users").doc(user.uid);
+        const snap = await docRef.get();
+        if (snap.exists && snap.data().state) {
+          state = snap.data().state;
+          if (!state.theme) state.theme = "blue";
+          if (!state.futureTasks) state.futureTasks = {};
+          ensureProfileDefaults();
+        } else {
+          await docRef.set({ state }, { merge: true });
+        }
+        saveStateLocal();
+        applyTheme();
+        render();
+      } catch (e) {
+        console.error("Error loading remote state", e);
+      }
+    }
+
+    function setupFirebase() {
+      try {
+        // ---- PASTE YOUR FIREBASE CONFIG HERE ----
+        const firebaseConfig = {
+          apiKey: "YOUR_API_KEY_HERE",
+          authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+          projectId: "YOUR_PROJECT_ID",
+          storageBucket: "YOUR_PROJECT_ID.appspot.com",
+          messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+          appId: "YOUR_APP_ID"
+        };
+        // -----------------------------------------
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        firebaseEnabled = true;
+
+        auth.onAuthStateChanged(async user => {
+          currentUser = user;
+          updateAuthUI();
+          if (user) {
+            await loadUserStateFromFirestore(user);
+          } else {
+            loadStateLocal();
+            applyTheme();
+            render();
+          }
+        });
+      } catch (e) {
+        console.warn("Firebase not configured or failed to initialize. Using local-only mode.", e);
+        firebaseEnabled = false;
+        updateAuthUI();
+      }
+    }
+
+    // ---------- Theme ----------
+    function applyTheme() {
+      const theme = state.theme || "blue";
+      const themes = [
+        "blue","green","sand","lavender","slate","wood","paper","journal","pink",
+        "night-navy","night-forest","night-purple","night-amber","night-mono"
+      ];
+      document.body.classList.remove(
+        ...themes.map(t => "theme-" + t)
+      );
+      document.body.classList.add("theme-" + theme);
+
+      document.querySelectorAll(".theme-button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.theme === theme);
+      });
+    }
+
+    // ---------- Rendering ----------
+    const headerDateEl = document.getElementById("header-date");
+    const goalsRowEl = document.getElementById("goals-row");
+    const tomorrowPlanEl = document.getElementById("tomorrow-plan");
+    const checklistEl = document.getElementById("checklist");
+    const currentDayLabelEl = document.getElementById("current-day-label");
+    const taskStatsEl = document.getElementById("task-stats");
+    const upcomingListEl = document.getElementById("upcoming-list");
+    const dailyNotesEl = document.getElementById("daily-notes");
+
+    // Health elements
+    const exerciseNotesEl = document.getElementById("exercise-notes");
+    const exerciseRatingEl = document.getElementById("exercise-rating");
+    const exerciseRatingValueEl = document.getElementById("exercise-rating-value");
+    const exerciseActivityLabelEl = document.getElementById("exercise-activity-label");
+
+    const profileWeightEl = document.getElementById("profile-weight");
+    const profileHeightEl = document.getElementById("profile-height");
+    const profileAgeEl = document.getElementById("profile-age");
+    const profileSexEl = document.getElementById("profile-sex");
+    const bmrDisplayEl = document.getElementById("bmr-display");
+
+    const dietTargetEl = document.getElementById("diet-target");
+    const dietConsumedEl = document.getElementById("diet-consumed");
+    const dietRatingEl = document.getElementById("diet-rating");
+    const dietRatingValueEl = document.getElementById("diet-rating-value");
+    const dietQualityLabelEl = document.getElementById("diet-quality-label");
+    const dietDeltaDisplayEl = document.getElementById("diet-delta-display");
+
+    const exerciseMiniCalEl = document.getElementById("exercise-mini-calendar");
+    const dietMiniCalEl = document.getElementById("diet-mini-calendar");
+    const calorieSummaryEl = document.getElementById("calorie-summary");
+    const weightProjectionEl = document.getElementById("weight-projection");
+
+    const printSummaryBtn = document.getElementById("print-summary-btn");
+    const printSummaryEl = document.getElementById("print-summary");
+
+    function render() {
+      const goalsMap = getGoalsMap();
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+
+      applyTheme();
+
+      const today = new Date();
+      headerDateEl.innerHTML = `
+        <div>Today: ${formatHumanDate(today)}</div>
+        <div style="font-size: 0.85rem; color: #64748b;">
+          Viewing: ${formatHumanDate(currentDate)}
+        </div>
+      `;
+
+      renderGoalBubbles(dayData);
+      renderTomorrowPlan(goalsMap, dayData);
+      renderChecklist(goalsMap, dayData);
+
+      currentDayLabelEl.textContent = `Viewing: ${formatHumanDate(currentDate)}`;
+
+      const { total, completed } = getTaskCounts(goalsMap, dayData);
+      if (total === 0) {
+        taskStatsEl.textContent = "No tasks yet for this day.";
+      } else {
+        taskStatsEl.textContent = `Completed ${completed} of ${total} tasks.`;
+      }
+
+      dailyNotesEl.value = dayData.notes || "";
+      autoResizeTextarea(dailyNotesEl);
+
+      renderUpcomingTasks();
+      renderHealthSection();
+    }
+
+    function renderGoalBubbles(dayData) {
+      goalsRowEl.innerHTML = "";
+      const pattern = [4, 3, 4];
+      let patternIndex = 0;
+      let i = 0;
+
+      while (i < state.goals.length) {
+        const rowDiv = document.createElement("div");
+        rowDiv.className = "goals-row-line";
+
+        const countThisRow = pattern[patternIndex % pattern.length];
+        for (let j = 0; j < countThisRow && i < state.goals.length; j++, i++) {
+          const goal = state.goals[i];
+          const bubble = document.createElement("button");
+          bubble.type = "button";
+          bubble.className =
+            "goal-bubble" +
+            (dayData.selectedGoalIds.includes(goal.id) ? " active" : "");
+          bubble.draggable = true;
+          bubble.dataset.goalId = goal.id;
+          bubble.innerHTML = `
+            <span class="goal-text">${goal.name}</span>
+            <span class="goal-badge">${goal.todayTasks.length} today</span>
+            <button type="button" class="goal-edit-btn" aria-label="Edit goal">✎</button>
+          `;
+
+          bubble.addEventListener("click", () =>
+            toggleGoalForCurrentDay(goal.id)
+          );
+          bubble.addEventListener("dragstart", onGoalDragStart);
+
+          const editBtn = bubble.querySelector(".goal-edit-btn");
+          editBtn.addEventListener("click", ev => {
+            ev.stopPropagation();
+            editGoal(goal.id);
+          });
+
+          rowDiv.appendChild(bubble);
+        }
+
+        goalsRowEl.appendChild(rowDiv);
+        patternIndex++;
+      }
+    }
+
+    function renderTomorrowPlan(goalsMap, dayData) {
+      tomorrowPlanEl.innerHTML = "";
+
+      const selectedGoals = dayData.selectedGoalIds
+        .map(id => goalsMap[id])
+        .filter(Boolean);
+
+      if (selectedGoals.length === 0) {
+        const p = document.createElement("p");
+        p.className = "checklist-empty";
+        p.textContent =
+          "No goals yet. Drag or click a bubble above to start planning.";
+        tomorrowPlanEl.appendChild(p);
+        return;
+      }
+
+      selectedGoals.forEach(goal => {
+        const card = document.createElement("div");
+        card.className = "goal-card";
+
+        const header = document.createElement("div");
+        header.className = "goal-card-header";
+
+        const title = document.createElement("div");
+        title.className = "goal-card-title";
+        title.textContent = goal.name;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "goal-card-remove";
+        removeBtn.textContent = "Remove";
+        removeBtn.addEventListener("click", () => {
+          toggleGoalForCurrentDay(goal.id);
+        });
+
+        header.appendChild(title);
+        header.appendChild(removeBtn);
+        card.appendChild(header);
+
+        const list = document.createElement("ul");
+        goal.todayTasks.forEach(task => {
+          const li = document.createElement("li");
+          li.textContent = task;
+          list.appendChild(li);
+        });
+        card.appendChild(list);
+
+        tomorrowPlanEl.appendChild(card);
+      });
+    }
+
+    function buildTaskList(goalsMap, dayData) {
+      const taskSet = new Set();
+      const dateKey = formatDateKey(currentDate);
+
+      dayData.selectedGoalIds.forEach(id => {
+        const goal = goalsMap[id];
+        if (goal) {
+          goal.todayTasks.forEach(t => taskSet.add(t));
+        }
+      });
+
+      (dayData.carriedTasks || []).forEach(t => taskSet.add(t));
+      (dayData.customTasks || []).forEach(t => taskSet.add(t));
+
+      if (state.futureTasks && state.futureTasks[dateKey]) {
+        state.futureTasks[dateKey].forEach(t => taskSet.add(t));
+      }
+
+      return Array.from(taskSet);
+    }
+
+    function renderChecklist(goalsMap, dayData) {
+      checklistEl.innerHTML = "";
+
+      const tasks = buildTaskList(goalsMap, dayData);
+
+      if (tasks.length === 0) {
+        const p = document.createElement("p");
+        p.className = "checklist-empty";
+        p.textContent =
+          "Once you choose goals, or add one-off tasks, they will show up here.";
+        checklistEl.appendChild(p);
+        return;
+      }
+
+      const completedMap = dayData.completed || {};
+
+      tasks.forEach(task => {
+        const div = document.createElement("div");
+        div.className = "checklist-item";
+        const id = "task-" + task.replace(/\s+/g, "-").toLowerCase();
+
+        const checked = !!completedMap[task];
+
+        div.innerHTML = `
+          <label>
+            <input type="checkbox" id="${id}" ${checked ? "checked" : ""} data-task="${task}">
+            <span>${task}</span>
+          </label>
+          <button type="button" class="schedule-btn" data-task="${task}">📅</button>
+        `;
+
+        checklistEl.appendChild(div);
+      });
+    }
+
+    function getTaskCounts(goalsMap, dayData) {
+      const tasks = buildTaskList(goalsMap, dayData);
+      const completedMap = dayData.completed || {};
+      let completed = 0;
+      tasks.forEach(t => {
+        if (completedMap[t]) completed++;
+      });
+      return { total: tasks.length, completed };
+    }
+
+    function renderUpcomingTasks() {
+      upcomingListEl.innerHTML = "";
+
+      const todayKey = formatDateKey(currentDate);
+      const ft = state.futureTasks || {};
+      const keys = Object.keys(ft)
+        .filter(k => k > todayKey && ft[k] && ft[k].length > 0)
+        .sort();
+
+      if (keys.length === 0) {
+        upcomingListEl.textContent = "No scheduled future tasks beyond this day.";
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      keys.forEach(key => {
+        const dateTasks = ft[key];
+        const li = document.createElement("li");
+        const dateLabel = formatHumanDate(parseDateKey(key));
+        li.innerHTML = `<strong><button type="button" class="upcoming-link" data-date="${key}">${dateLabel}</button></strong>: ${dateTasks.join(", ")}`;
+        ul.appendChild(li);
+      });
+
+      upcomingListEl.appendChild(ul);
+    }
+
+    upcomingListEl.addEventListener("click", e => {
+      const btn = e.target.closest(".upcoming-link");
+      if (!btn) return;
+      const dateKey = btn.dataset.date;
+      if (!dateKey) return;
+      currentDate = parseDateKey(dateKey);
+      render();
+    });
+
+    // ---------- Health / BMR / ratings ----------
+    function calculateBMR(profile) {
+      if (!profile) return null;
+      const { sex, age, weightLbs, heightIn } = profile;
+      if (!sex || !age || !weightLbs || !heightIn) return null;
+      const weightKg = weightLbs * 0.453592;
+      const heightCm = heightIn * 2.54;
+      let bmr;
+      if (sex === "male") {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+      } else if (sex === "female") {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+      } else {
+        // neutral in-between
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * age - 78;
+      }
+      return Math.round(bmr);
+    }
+
+    function getActivityFactorForRating(r) {
+      if (!r || r < 1) return 1.2;    // default sedentary-ish
+      if (r <= 2) return 1.2;         // Sedentary
+      if (r <= 4) return 1.375;       // Light
+      if (r <= 6) return 1.55;        // Moderate
+      if (r <= 8) return 1.725;       // Heavy
+      return 1.9;                     // Vigorous
+    }
+
+    function getActivityLabelForRating(r) {
+      if (!r || r < 1) return "";
+      if (r <= 2) return "Sedentary (little or no exercise)";
+      if (r <= 4) return "Light activity";
+      if (r <= 6) return "Moderate activity";
+      if (r <= 8) return "Heavy / hard exercise";
+      return "Vigorous / very hard exercise";
+    }
+
+    function getDietLabelForRating(r) {
+      if (!r || r < 1) return "";
+      if (r <= 2) return "Rough day";
+      if (r <= 4) return "Not great";
+      if (r <= 6) return "Okay / mixed";
+      if (r <= 8) return "On track";
+      return "Dialed in";
+    }
+
+    function ratingToColor(r) {
+      if (!r || r < 1) return "#e5e7eb";
+      if (r <= 1) return "#7f1d1d";   // deep red
+      if (r <= 2) return "#b91c1c";
+      if (r <= 3) return "#ef4444";
+      if (r <= 4) return "#f97316";
+      if (r <= 5) return "#facc15";
+      if (r <= 6) return "#a3e635";
+      if (r <= 7) return "#4ade80";
+      if (r <= 8) return "#22c55e";
+      if (r <= 9) return "#16a34a";
+      return "#166534";             // deep green
+    }
+
+    function renderHealthSection() {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      const ex = dayData.exercise;
+      const di = dayData.diet;
+
+      // Exercise current day
+      exerciseNotesEl.value = ex.type || "";
+      autoResizeTextarea(exerciseNotesEl);
+
+      let exRatingVal = ex && ex.rating != null ? ex.rating : null;
+      if (exRatingVal != null) {
+        exerciseRatingEl.value = exRatingVal;
+        exerciseRatingValueEl.textContent = exRatingVal;
+      } else {
+        exerciseRatingEl.value = 5;
+        exerciseRatingValueEl.textContent = "-";
+      }
+      exerciseActivityLabelEl.textContent = getActivityLabelForRating(exRatingVal);
+
+      // Profile
+      const p = state.profile || {};
+      profileWeightEl.value = p.weightLbs != null ? p.weightLbs : "";
+      profileHeightEl.value = p.heightIn != null ? p.heightIn : "";
+      profileAgeEl.value = p.age != null ? p.age : "";
+      profileSexEl.value = p.sex || "";
+
+      const baseBMR = calculateBMR(p);
+      const activityFactor = getActivityFactorForRating(exRatingVal);
+      const adjustedBMR = baseBMR != null ? Math.round(baseBMR * activityFactor) : null;
+
+      if (baseBMR != null) {
+        bmrDisplayEl.textContent =
+          `BMR: basic ${baseBMR.toLocaleString()} kcal · adjusted ${adjustedBMR != null ? adjustedBMR.toLocaleString() : "–"} kcal`;
+      } else {
+        bmrDisplayEl.textContent = "BMR: basic – · adjusted – (enter weight, height, age, sex)";
+      }
+
+      // Diet current day: use per-day target or default
+      const effectiveTarget = di.targetCalories != null
+        ? di.targetCalories
+        : state.defaultTargetCalories;
+
+      dietTargetEl.value = effectiveTarget != null ? effectiveTarget : "";
+      dietConsumedEl.value = di.consumedCalories != null ? di.consumedCalories : "";
+      if (di.rating != null) {
+        dietRatingEl.value = di.rating;
+        dietRatingValueEl.textContent = di.rating;
+      } else {
+        dietRatingEl.value = 5;
+        dietRatingValueEl.textContent = "-";
+      }
+      dietQualityLabelEl.textContent = getDietLabelForRating(di.rating);
+
+      dietDeltaDisplayEl.style.fontWeight = "600";
+
+      if (effectiveTarget != null && di.consumedCalories != null) {
+        const diff = di.consumedCalories - effectiveTarget;
+        const absDiff = Math.abs(diff);
+        if (diff === 0) {
+          dietDeltaDisplayEl.textContent = "Today’s calories: on target.";
+          dietDeltaDisplayEl.style.color = "#0f172a";
+        } else if (diff > 0) {
+          dietDeltaDisplayEl.textContent = `Today’s calories: surplus of ${absDiff} kcal.`;
+          dietDeltaDisplayEl.style.color = "#b91c1c";
+        } else {
+          dietDeltaDisplayEl.textContent = `Today’s calories: deficit of ${absDiff} kcal.`;
+          dietDeltaDisplayEl.style.color = "#15803d";
+        }
+      } else {
+        dietDeltaDisplayEl.textContent = "Today’s calories: – (set target & consumed)";
+        dietDeltaDisplayEl.style.color = "#64748b";
+      }
+
+      renderMiniCalendars();
+      renderProjections();
+    }
+
+    function renderMiniCalendars() {
+      exerciseMiniCalEl.innerHTML = "";
+      dietMiniCalEl.innerHTML = "";
+
+      const keys = getRecentDateKeys(currentDate, 27); // 4 weeks
+      keys.forEach(key => {
+        const d = parseDateKey(key);
+        const dayNum = d.getDate();
+        const dayData = state.days[key];
+
+        const ex = dayData && dayData.exercise ? dayData.exercise : null;
+        const di = dayData && dayData.diet ? dayData.diet : null;
+
+        const exRating = ex ? (ex.rating != null ? ex.rating : (ex.done ? 7 : null)) : null;
+        const dietRating = di ? (di.rating != null ? di.rating : null) : null;
+
+        // Exercise square
+        const exDiv = document.createElement("div");
+        exDiv.className = "mini-day" + (exRating ? "" : " no-data");
+        exDiv.style.background = ratingToColor(exRating);
+        exDiv.dataset.date = key;
+        exDiv.title = `${formatHumanDate(d)} — exercise: ${
+          exRating ? exRating + "/10" : "no data"
+        }`;
+        exDiv.textContent = dayNum;
+        exerciseMiniCalEl.appendChild(exDiv);
+
+        // Diet square
+        const diDiv = document.createElement("div");
+        diDiv.className = "mini-day" + (dietRating ? "" : " no-data");
+        diDiv.style.background = ratingToColor(dietRating);
+        diDiv.dataset.date = key;
+        diDiv.title = `${formatHumanDate(d)} — food: ${
+          dietRating ? dietRating + "/10" : "no data"
+        }`;
+        diDiv.textContent = dayNum;
+        dietMiniCalEl.appendChild(diDiv);
+      });
+    }
+
+    function renderProjections() {
+      // Today's surplus/deficit summary (bold)
+      const currentKey = formatDateKey(currentDate);
+      const dayDataNow = getDayData(currentKey);
+      const dNow = dayDataNow.diet;
+      const targetNow = dNow.targetCalories != null
+        ? dNow.targetCalories
+        : state.defaultTargetCalories;
+      const consumedNow = dNow.consumedCalories;
+
+      if (targetNow != null && consumedNow != null) {
+        const diffNow = consumedNow - targetNow;
+        const absNow = Math.abs(diffNow);
+        if (diffNow === 0) {
+          calorieSummaryEl.innerHTML = `<strong>Today: on target (0 kcal difference).</strong>`;
+        } else if (diffNow > 0) {
+          calorieSummaryEl.innerHTML = `<strong>Today: surplus of ${absNow} kcal.</strong>`;
+        } else {
+          calorieSummaryEl.innerHTML = `<strong>Today: deficit of ${absNow} kcal.</strong>`;
+        }
+      } else {
+        calorieSummaryEl.innerHTML = `<strong>Today: – (set target & consumed to see deficit).</strong>`;
+      }
+
+      // For projections, use recent average over last 4 weeks
+      const keys = getRecentDateKeys(currentDate, 27);
+      let totalDiff = 0;
+      let count = 0;
+
+      keys.forEach(key => {
+        const dayData = state.days[key];
+        if (!dayData || !dayData.diet) return;
+        const d = dayData.diet;
+        const target = d.targetCalories != null
+          ? d.targetCalories
+          : state.defaultTargetCalories;
+        const consumed = d.consumedCalories;
+        if (target != null && consumed != null) {
+          totalDiff += (consumed - target);
+          count++;
+        }
+      });
+
+      if (!count) {
+        weightProjectionEl.textContent = "";
+        return;
+      }
+
+      const avgDiff = totalDiff / count;
+
+      const KCAL_PER_LB = 3500;
+      const weekChange = avgDiff * 7 / KCAL_PER_LB;
+      const monthChange = avgDiff * 30 / KCAL_PER_LB;
+      const quarterChange = avgDiff * 90 / KCAL_PER_LB;
+
+      const p = state.profile || {};
+      const base = p.weightLbs;
+
+      function fmtDelta(delta) {
+        const sign = delta > 0 ? "+" : "";
+        return `${sign}${delta.toFixed(1)} lb`;
+      }
+
+      function fmtWithBase(delta) {
+        if (base == null) return fmtDelta(delta);
+        const newWeight = base + delta;
+        return `${newWeight.toFixed(1)} lb (${fmtDelta(delta)})`;
+      }
+
+      weightProjectionEl.textContent =
+        `If your recent pattern continued: 1 week: ${fmtWithBase(weekChange)} · 1 month: ${fmtWithBase(monthChange)} · 3 months: ${fmtWithBase(quarterChange)}`;
+    }
+
+    // Mini calendar click -> jump to date
+    exerciseMiniCalEl.addEventListener("click", e => {
+      const cell = e.target.closest(".mini-day");
+      if (!cell || !cell.dataset.date) return;
+      currentDate = parseDateKey(cell.dataset.date);
+      render();
+    });
+    dietMiniCalEl.addEventListener("click", e => {
+      const cell = e.target.closest(".mini-day");
+      if (!cell || !cell.dataset.date) return;
+      currentDate = parseDateKey(cell.dataset.date);
+      render();
+    });
+
+    // ---------- Interactions ----------
+    function toggleGoalForCurrentDay(goalId) {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      const idx = dayData.selectedGoalIds.indexOf(goalId);
+      if (idx >= 0) {
+        dayData.selectedGoalIds.splice(idx, 1);
+        playSound("goalOff");
+      } else {
+        dayData.selectedGoalIds.push(goalId);
+        playSound("goalOn");
+      }
+      saveState();
+      render();
+    }
+
+    function editGoal(goalId) {
+      const goalsMap = getGoalsMap();
+      const goal = goalsMap[goalId];
+      if (!goal) return;
+
+      const newName = prompt("Edit goal name:", goal.name);
+      if (newName === null) return;
+      const trimmedName = newName.trim();
+      if (trimmedName) {
+        goal.name = trimmedName;
+      }
+
+      const currentTasksString = goal.todayTasks.join(", ");
+      const newTasksString = prompt(
+        "Edit tasks (comma-separated):",
+        currentTasksString
+      );
+      if (newTasksString !== null) {
+        const tasks = newTasksString
+          .split(",")
+          .map(t => t.trim())
+          .filter(t => t.length > 0);
+        if (tasks.length > 0) {
+          goal.todayTasks = tasks;
+        }
+      }
+
+      saveState();
+      playSound("newGoal");
+      render();
+    }
+
+    // Drag & drop from bubbles to tomorrow plan
+    function onGoalDragStart(e) {
+      const goalId = e.currentTarget.dataset.goalId;
+      e.dataTransfer.setData("text/plain", goalId);
+      e.dataTransfer.effectAllowed = "copyMove";
+    }
+
+    tomorrowPlanEl.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      tomorrowPlanEl.classList.add("drag-over");
+    });
+
+    tomorrowPlanEl.addEventListener("dragleave", () => {
+      tomorrowPlanEl.classList.remove("drag-over");
+    });
+
+    tomorrowPlanEl.addEventListener("drop", e => {
+      e.preventDefault();
+      tomorrowPlanEl.classList.remove("drag-over");
+      const goalId = e.dataTransfer.getData("text/plain");
+      if (goalId) {
+        toggleGoalForCurrentDay(goalId);
+      }
+    });
+
+    // Checklist checkbox interaction + schedule buttons
+    checklistEl.addEventListener("change", e => {
+      if (e.target && e.target.matches('input[type="checkbox"][data-task]')) {
+        const task = e.target.dataset.task;
+        const checked = e.target.checked;
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        if (!dayData.completed) dayData.completed = {};
+        dayData.completed[task] = checked;
+        saveState();
+        playSound(checked ? "complete" : "uncheck");
+        render();
+      }
+    });
+
+    checklistEl.addEventListener("click", e => {
+      if (e.target && e.target.matches(".schedule-btn[data-task]")) {
+        const task = e.target.dataset.task;
+        const defaultFuture = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate() + 7
+        );
+        const defaultKey = formatDateKey(defaultFuture);
+        const input = prompt(
+          `Schedule "${task}" for which date? (YYYY-MM-DD)`,
+          defaultKey
+        );
+        if (!input) return;
+        const trimmed = input.trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+          alert("Please use the format YYYY-MM-DD.");
+          playSound("error");
+          return;
+        }
+        scheduleTaskForDate(task, trimmed);
+        saveState();
+        render();
+      }
+    });
+
+    function scheduleTaskForDate(task, dateKey) {
+      if (!state.futureTasks) state.futureTasks = {};
+      if (!state.futureTasks[dateKey]) state.futureTasks[dateKey] = [];
+      if (!state.futureTasks[dateKey].includes(task)) {
+        state.futureTasks[dateKey].push(task);
+      }
+      saveState();
+      playSound("schedule");
+      alert(`Scheduled "${task}" for ${formatHumanDate(parseDateKey(dateKey))}.`);
+    }
+
+    // New goal form
+    const newGoalForm = document.getElementById("new-goal-form");
+    const newGoalNameInput = document.getElementById("new-goal-name");
+    const newGoalTasksInput = document.getElementById("new-goal-tasks");
+
+    newGoalForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const name = newGoalNameInput.value.trim();
+      const tasksRaw = newGoalTasksInput.value.trim();
+
+      if (!name || !tasksRaw) return;
+
+      const tasks = tasksRaw
+        .split(",")
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
+      if (tasks.length === 0) return;
+
+      const newGoal = {
+        id: "g_" + Date.now(),
+        name,
+        todayTasks: tasks
+      };
+
+      state.goals.push(newGoal);
+      saveState();
+      newGoalNameInput.value = "";
+      newGoalTasksInput.value = "";
+      playSound("newGoal");
+      render();
+    });
+
+    // Add extra checklist task (one-off)
+    const newChecklistForm = document.getElementById("new-checklist-task-form");
+    const newChecklistInput = document.getElementById("new-checklist-task");
+
+    newChecklistForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const text = newChecklistInput.value.trim();
+      if (!text) return;
+
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      if (!dayData.customTasks) dayData.customTasks = [];
+      if (!dayData.customTasks.includes(text)) {
+        dayData.customTasks.push(text);
+      }
+
+      saveState();
+      newChecklistInput.value = "";
+      playSound("newTask");
+      render();
+    });
+
+    // Daily notes
+    dailyNotesEl.addEventListener("input", e => {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      dayData.notes = e.target.value;
+      autoResizeTextarea(dailyNotesEl);
+      saveState();
+    });
+
+    // Date navigation
+    const prevDayBtn = document.getElementById("prev-day-btn");
+    const nextDayBtn = document.getElementById("next-day-btn");
+
+    prevDayBtn.addEventListener("click", () => {
+      currentDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() - 1
+      );
+      playSound("changeDay");
+      render();
+    });
+
+    nextDayBtn.addEventListener("click", () => {
+      currentDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() + 1
+      );
+      playSound("changeDay");
+      render();
+    });
+
+    // Carry forward incomplete tasks
+    const carryForwardBtn = document.getElementById("carry-forward-btn");
+    carryForwardBtn.addEventListener("click", () => {
+      const goalsMap = getGoalsMap();
+      const currentKey = formatDateKey(currentDate);
+      const currentDay = getDayData(currentKey);
+      const tasks = buildTaskList(goalsMap, currentDay);
+      const completedMap = currentDay.completed || {};
+
+      const incompleteTasks = tasks.filter(t => !completedMap[t]);
+
+      if (incompleteTasks.length === 0) {
+        alert("No incomplete tasks to carry forward.");
+        playSound("error");
+        return;
+      }
+
+      const nextDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() + 1
+      );
+      const nextKey = formatDateKey(nextDate);
+      const nextDay = getDayData(nextKey);
+      if (!nextDay.carriedTasks) nextDay.carriedTasks = [];
+
+      incompleteTasks.forEach(task => {
+        if (!nextDay.carriedTasks.includes(task)) {
+          nextDay.carriedTasks.push(task);
+        }
+      });
+
+      saveState();
+      playSound("carryForward");
+      alert(
+        `Carried ${incompleteTasks.length} task(s) forward to ${formatHumanDate(
+          nextDate
+        )}.`
+      );
+    });
+
+    // Theme selector
+    document.querySelectorAll(".theme-button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.theme = btn.dataset.theme;
+        saveState();
+        applyTheme();
+        playSound("changeTheme");
+      });
+    });
+
+    // Save / Load backup
+    const saveBtn = document.getElementById("save-state-btn");
+    const loadInput = document.getElementById("load-state-input");
+
+    saveBtn.addEventListener("click", () => {
+      const dataStr = JSON.stringify(state, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const todayKey = formatDateKey(new Date());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tomorrow-planner-backup-${todayKey}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    loadInput.addEventListener("change", () => {
+      const file = loadInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed || !parsed.goals || !parsed.days) {
+            alert("This file doesn't look like a valid backup.");
+            playSound("error");
+            return;
+          }
+          state = parsed;
+          if (!state.theme) state.theme = "blue";
+          if (!state.futureTasks) state.futureTasks = {};
+          ensureProfileDefaults();
+          saveState();
+          playSound("changeDay");
+          render();
+        } catch (err) {
+          console.error(err);
+          alert("Could not read backup file.");
+          playSound("error");
+        }
+      };
+      reader.readAsText(file);
+      loadInput.value = "";
+    });
+
+    // Auth buttons
+    const authEmailInput = document.getElementById("auth-email");
+    const authPasswordInput = document.getElementById("auth-password");
+    const authRegisterBtn = document.getElementById("auth-register-btn");
+    const authLoginBtn = document.getElementById("auth-login-btn");
+    const authLogoutBtn = document.getElementById("auth-logout-btn");
+
+    if (authRegisterBtn) {
+      authRegisterBtn.addEventListener("click", async () => {
+        if (!firebaseEnabled || !auth) return alert("Cloud sync is not configured.");
+        const email = authEmailInput.value.trim();
+        const pw = authPasswordInput.value.trim();
+        if (!email || !pw) {
+          alert("Please enter email and password.");
+          return;
+        }
+        try {
+          await auth.createUserWithEmailAndPassword(email, pw);
+          authPasswordInput.value = "";
+        } catch (e) {
+          console.error(e);
+          alert(e.message || "Registration failed.");
+        }
+      });
+    }
+
+    if (authLoginBtn) {
+      authLoginBtn.addEventListener("click", async () => {
+        if (!firebaseEnabled || !auth) return alert("Cloud sync is not configured.");
+        const email = authEmailInput.value.trim();
+        const pw = authPasswordInput.value.trim();
+        if (!email || !pw) {
+          alert("Please enter email and password.");
+          return;
+        }
+        try {
+          await auth.signInWithEmailAndPassword(email, pw);
+          authPasswordInput.value = "";
+        } catch (e) {
+          console.error(e);
+          alert(e.message || "Login failed.");
+        }
+      });
+    }
+
+    if (authLogoutBtn) {
+      authLogoutBtn.addEventListener("click", async () => {
+        if (!firebaseEnabled || !auth) return;
+        try {
+          await auth.signOut();
+        } catch (e) {
+          console.error(e);
+          alert("Could not log out.");
+        }
+      });
+    }
+
+    // Exercise & diet input listeners
+    if (exerciseNotesEl) {
+      exerciseNotesEl.addEventListener("input", () => {
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.exercise.type = exerciseNotesEl.value;
+        autoResizeTextarea(exerciseNotesEl);
+        saveState();
+      });
+    }
+
+    if (exerciseRatingEl) {
+      exerciseRatingEl.addEventListener("input", () => {
+        const val = parseInt(exerciseRatingEl.value, 10);
+        exerciseRatingValueEl.textContent = isNaN(val) ? "-" : val;
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.exercise.rating = isNaN(val) ? null : val;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (dietTargetEl) {
+      dietTargetEl.addEventListener("input", () => {
+        const val = parseInt(dietTargetEl.value, 10);
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.diet.targetCalories = isNaN(val) ? null : val;
+        if (!isNaN(val)) {
+          state.defaultTargetCalories = val;
+        }
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (dietConsumedEl) {
+      dietConsumedEl.addEventListener("input", () => {
+        const val = parseInt(dietConsumedEl.value, 10);
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.diet.consumedCalories = isNaN(val) ? null : val;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (dietRatingEl) {
+      dietRatingEl.addEventListener("input", () => {
+        const val = parseInt(dietRatingEl.value, 10);
+        dietRatingValueEl.textContent = isNaN(val) ? "-" : val;
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.diet.rating = isNaN(val) ? null : val;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    // Profile listeners
+    if (profileWeightEl) {
+      profileWeightEl.addEventListener("input", () => {
+        const v = parseFloat(profileWeightEl.value);
+        state.profile.weightLbs = isNaN(v) ? null : v;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (profileHeightEl) {
+      profileHeightEl.addEventListener("input", () => {
+        const v = parseFloat(profileHeightEl.value);
+        state.profile.heightIn = isNaN(v) ? null : v;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (profileAgeEl) {
+      profileAgeEl.addEventListener("input", () => {
+        const v = parseInt(profileAgeEl.value, 10);
+        state.profile.age = isNaN(v) ? null : v;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (profileSexEl) {
+      profileSexEl.addEventListener("change", () => {
+        state.profile.sex = profileSexEl.value || "";
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    // ---------- Print summary ----------
+    function buildPrintSummary() {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      const goalsMap = getGoalsMap();
+      const tasks = buildTaskList(goalsMap, dayData);
+      const completedMap = dayData.completed || {};
+
+      let html = `<h1>Day summary – ${formatHumanDate(currentDate)}</h1>`;
+
+      // Tomorrow's plan
+      const selectedGoals = dayData.selectedGoalIds
+        .map(id => goalsMap[id])
+        .filter(Boolean);
+      if (selectedGoals.length > 0) {
+        html += "<h2>Tomorrow’s plan</h2><ul>";
+        selectedGoals.forEach(g => {
+          html += `<li>${escapeHtml(g.name)}</li>`;
+        });
+        html += "</ul>";
+      }
+
+      // Checklist
+      if (tasks.length > 0) {
+        html += "<h2>Checklist</h2><ul>";
+        tasks.forEach(t => {
+          const mark = completedMap[t] ? "☑" : "☐";
+          html += `<li>${mark} ${escapeHtml(t)}</li>`;
+        });
+        html += "</ul>";
+      }
+
+      // Daily notes
+      if (dayData.notes && dayData.notes.trim().length > 0) {
+        html += "<h2>Daily notes</h2>";
+        html += `<pre>${escapeHtml(dayData.notes)}</pre>`;
+      }
+
+      // Exercise / diet (only if any values present)
+      const ex = dayData.exercise || {};
+      const di = dayData.diet || {};
+      const hasExercise = (ex.type && ex.type.trim()) || ex.rating != null;
+      const hasDiet = di.targetCalories != null || di.consumedCalories != null || di.rating != null;
+
+      if (hasExercise || hasDiet) {
+        html += "<h2>Health</h2>";
+        if (hasExercise) {
+          html += "<h3>Exercise</h3><ul>";
+          if (ex.type && ex.type.trim()) {
+            html += `<li>Details: ${escapeHtml(ex.type)}</li>`;
+          }
+          if (ex.rating != null) {
+            html += `<li>Rating: ${ex.rating}/10 (${escapeHtml(getActivityLabelForRating(ex.rating))})</li>`;
+          }
+          html += "</ul>";
+        }
+        if (hasDiet) {
+          html += "<h3>Diet & calories</h3><ul>";
+          if (di.targetCalories != null) html += `<li>Target: ${di.targetCalories} kcal</li>`;
+          if (di.consumedCalories != null) html += `<li>Consumed: ${di.consumedCalories} kcal</li>`;
+          if (di.targetCalories != null && di.consumedCalories != null) {
+            const diff = di.consumedCalories - di.targetCalories;
+            const absDiff = Math.abs(diff);
+            if (diff === 0) {
+              html += "<li>Today: on target.</li>";
+            } else if (diff > 0) {
+              html += `<li>Surplus: ${absDiff} kcal</li>`;
+            } else {
+              html += `<li>Deficit: ${absDiff} kcal</li>`;
+            }
+          }
+          if (di.rating != null) {
+            html += `<li>Day rating: ${di.rating}/10 (${escapeHtml(getDietLabelForRating(di.rating))})</li>`;
+          }
+          html += "</ul>";
+        }
+      }
+
+      // Tasks explicitly scheduled for this date
+      if (state.futureTasks && state.futureTasks[dateKey] && state.futureTasks[dateKey].length > 0) {
+        html += "<h2>Scheduled for this date</h2><ul>";
+        state.futureTasks[dateKey].forEach(t => {
+          html += `<li>${escapeHtml(t)}</li>`;
+        });
+        html += "</ul>";
+      }
+
+      printSummaryEl.innerHTML = html;
+    }
+
+    if (printSummaryBtn) {
+      printSummaryBtn.addEventListener("click", () => {
+        buildPrintSummary();
+        document.body.classList.add("print-mode");
+        window.print();
+      });
+    }
+
+    window.addEventListener("afterprint", () => {
+      document.body.classList.remove("print-mode");
+      printSummaryEl.innerHTML = "";
+    });
+
+    // ---------- Init ----------
+    loadStateLocal();
+    ensureProfileDefaults();
+    applyTheme();
+    render();
+    setupFirebase();
+    updateAuthUI();
+  </script>
+</body>
+</html>
