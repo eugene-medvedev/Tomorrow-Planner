@@ -1,0 +1,3642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tomorrow Planner</title>
+  <!-- Modern font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase (compat) SDKs: Auth + Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    /* ========= THEME VARIABLES ========= */
+
+    body {
+      --bg: linear-gradient(135deg, #e0f2fe, #ecfdf5);
+      --page-bg: rgba(255, 255, 255, 0.95);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-strong: rgba(148, 163, 184, 0.4);
+      --chip-bg: #f9fafb;
+      --chip-border: #cbd5f5;
+
+      --card-top-bg: #dbeafe;
+      --card-top-border: #bfdbfe;
+
+      --card-plan-bg: #e0f2fe;
+      --card-plan-border: #bae6fd;
+
+      --card-checklist-bg: #dcfce7;
+      --card-checklist-border: #bbf7d0;
+
+      --card-nav-bg: #eff6ff;
+      --card-nav-border: #bfdbfe;
+
+      --card-notes-bg: #fef9c3;
+      --card-notes-border: #facc15;
+
+      --card-upcoming-bg: #e0f2fe;
+      --card-upcoming-border: #bae6fd;
+
+      --card-health-bg: #ecfdf3;
+      --card-health-border: #bbf7d0;
+
+      --card-theme-bg: #f9fafb;
+      --card-theme-border: #cbd5f5;
+
+      --print-bg: #ffffff;
+      --print-text: #000000;
+
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* === Themes (same as before) === */
+
+    body.theme-calm {
+      --bg: linear-gradient(135deg, #e0f2fe, #ecfdf5);
+      --page-bg: rgba(255, 255, 255, 0.94);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-strong: rgba(148, 163, 184, 0.4);
+      --chip-bg: #f9fafb;
+      --chip-border: #cbd5f5;
+      --card-top-bg: #dbeafe;
+      --card-top-border: #bfdbfe;
+      --card-plan-bg: #e0f2fe;
+      --card-plan-border: #bae6fd;
+      --card-checklist-bg: #dcfce7;
+      --card-checklist-border: #bbf7d0;
+      --card-nav-bg: #eff6ff;
+      --card-nav-border: #bfdbfe;
+      --card-notes-bg: #fef9c3;
+      --card-notes-border: #facc15;
+      --card-upcoming-bg: #e0f2fe;
+      --card-upcoming-border: #bae6fd;
+      --card-health-bg: #ecfdf3;
+      --card-health-border: #86efac;
+      --card-theme-bg: #f9fafb;
+      --card-theme-border: #cbd5f5;
+    }
+
+    body.theme-pastel-sunrise {
+      --bg: linear-gradient(135deg, #ffe4e6, #fef3c7);
+      --page-bg: rgba(255, 252, 245, 0.95);
+      --text-main: #3f1f1d;
+      --text-muted: #7c2d12;
+      --border-strong: rgba(248, 180, 151, 0.7);
+      --chip-bg: #fff7ed;
+      --chip-border: #fed7aa;
+      --card-top-bg: #fed7aa;
+      --card-top-border: #fb923c;
+      --card-plan-bg: #ffedd5;
+      --card-plan-border: #fdba74;
+      --card-checklist-bg: #fef9c3;
+      --card-checklist-border: #facc15;
+      --card-nav-bg: #fee2e2;
+      --card-nav-border: #fecaca;
+      --card-notes-bg: #fef3c7;
+      --card-notes-border: #fbbf24;
+      --card-upcoming-bg: #ffe4e6;
+      --card-upcoming-border: #fb7185;
+      --card-health-bg: #dcfce7;
+      --card-health-border: #22c55e;
+      --card-theme-bg: #f9fafb;
+      --card-theme-border: #cbd5f5;
+    }
+
+    body.theme-pastel-lilac {
+      --bg: linear-gradient(135deg, #ede9fe, #fdf2ff);
+      --page-bg: rgba(253, 244, 255, 0.95);
+      --text-main: #312e81;
+      --text-muted: #6b21a8;
+      --border-strong: rgba(196, 181, 253, 0.8);
+      --chip-bg: #f9fafb;
+      --chip-border: #e9d5ff;
+      --card-top-bg: #ede9fe;
+      --card-top-border: #c4b5fd;
+      --card-plan-bg: #f5f3ff;
+      --card-plan-border: #ddd6fe;
+      --card-checklist-bg: #fce7f3;
+      --card-checklist-border: #f9a8d4;
+      --card-nav-bg: #e0f2fe;
+      --card-nav-border: #bfdbfe;
+      --card-notes-bg: #fef9c3;
+      --card-notes-border: #facc15;
+      --card-upcoming-bg: #e9d5ff;
+      --card-upcoming-border: #a855f7;
+      --card-health-bg: #ecfdf3;
+      --card-health-border: #86efac;
+      --card-theme-bg: #f9fafb;
+      --card-theme-border: #cbd5f5;
+    }
+
+    body.theme-pastel-mint {
+      --bg: linear-gradient(135deg, #ccfbf1, #ecfeff);
+      --page-bg: rgba(240, 253, 250, 0.95);
+      --text-main: #064e3b;
+      --text-muted: #047857;
+      --border-strong: rgba(45, 212, 191, 0.7);
+      --chip-bg: #f0fdfa;
+      --chip-border: #99f6e4;
+      --card-top-bg: #a7f3d0;
+      --card-top-border: #34d399;
+      --card-plan-bg: #ccfbf1;
+      --card-plan-border: #5eead4;
+      --card-checklist-bg: #dcfce7;
+      --card-checklist-border: #22c55e;
+      --card-nav-bg: #e0f2fe;
+      --card-nav-border: #bfdbfe;
+      --card-notes-bg: #fef9c3;
+      --card-notes-border: #fbbf24;
+      --card-upcoming-bg: #ecfeff;
+      --card-upcoming-border: #67e8f9;
+      --card-health-bg: #ecfdf3;
+      --card-health-border: #22c55e;
+      --card-theme-bg: #f9fafb;
+      --card-theme-border: #cbd5f5;
+    }
+
+    body.theme-warm-sand {
+      --bg: linear-gradient(135deg, #fef3c7, #fffbeb);
+      --page-bg: rgba(255, 251, 235, 0.96);
+      --text-main: #422006;
+      --text-muted: #854d0e;
+      --border-strong: rgba(234, 179, 8, 0.7);
+      --chip-bg: #fffbeb;
+      --chip-border: #fcd34d;
+      --card-top-bg: #fbbf24;
+      --card-top-border: #f97316;
+      --card-plan-bg: #fde68a;
+      --card-plan-border: #fbbf24;
+      --card-checklist-bg: #fef9c3;
+      --card-checklist-border: #eab308;
+      --card-nav-bg: #fffbeb;
+      --card-nav-border: #fcd34d;
+      --card-notes-bg: #fef3c7;
+      --card-notes-border: #f59e0b;
+      --card-upcoming-bg: #fee2e2;
+      --card-upcoming-border: #fecaca;
+      --card-health-bg: #dcfce7;
+      --card-health-border: #22c55e;
+      --card-theme-bg: #f9fafb;
+      --card-theme-border: #cbd5f5;
+    }
+
+    body.theme-wood-journal {
+      --bg: linear-gradient(135deg, #fef3c7, #e5e7eb);
+      --page-bg: rgba(253, 246, 227, 0.97);
+      --text-main: #1f2933;
+      --text-muted: #6b7280;
+      --border-strong: rgba(148, 163, 184, 0.7);
+      --chip-bg: #fef3c7;
+      --chip-border: #fbbf24;
+      --card-top-bg: #fbbf24;
+      --card-top-border: #92400e;
+      --card-plan-bg: #e5e7eb;
+      --card-plan-border: #9ca3af;
+      --card-checklist-bg: #e0f2fe;
+      --card-checklist-border: #60a5fa;
+      --card-nav-bg: #fef3c7;
+      --card-nav-border: #fbbf24;
+      --card-notes-bg: #fef9c3;
+      --card-notes-border: #eab308;
+      --card-upcoming-bg: #ede9fe;
+      --card-upcoming-border: #a855f7;
+      --card-health-bg: #dcfce7;
+      --card-health-border: #22c55e;
+      --card-theme-bg: #f9fafb;
+      --card-theme-border: #cbd5f5;
+    }
+
+    body.theme-hot-pink {
+      --bg: linear-gradient(135deg, #fdf2f8, #fecaca);
+      --page-bg: rgba(255, 241, 248, 0.96);
+      --text-main: #4a044e;
+      --text-muted: #9d174d;
+      --border-strong: rgba(244, 114, 182, 0.8);
+      --chip-bg: #fdf2f8;
+      --chip-border: #f9a8d4;
+      --card-top-bg: #fce7f3;
+      --card-top-border: #f472b6;
+      --card-plan-bg: #ffe4e6;
+      --card-plan-border: #fb7185;
+      --card-checklist-bg: #fef9c3;
+      --card-checklist-border: #facc15;
+      --card-nav-bg: #fee2e2;
+      --card-nav-border: #fecaca;
+      --card-notes-bg: #fdf2f8;
+      --card-notes-border: #f9a8d4;
+      --card-upcoming-bg: #e9d5ff;
+      --card-upcoming-border: #a855f7;
+      --card-health-bg: #ecfdf3;
+      --card-health-border: #86efac;
+      --card-theme-bg: #f9fafb;
+      --card-theme-border: #cbd5f5;
+    }
+
+    body.theme-night-moon {
+      --bg: radial-gradient(circle at top, #020617 0, #0f172a 60%, #020617 100%);
+      --page-bg: rgba(15, 23, 42, 0.97);
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-strong: rgba(148, 163, 184, 0.7);
+      --chip-bg: #020617;
+      --chip-border: #4b5563;
+      --card-top-bg: #020617;
+      --card-top-border: #6366f1;
+      --card-plan-bg: #030712;
+      --card-plan-border: #4b5563;
+      --card-checklist-bg: #111827;
+      --card-checklist-border: #4ade80;
+      --card-nav-bg: #020617;
+      --card-nav-border: #4b5563;
+      --card-notes-bg: #111827;
+      --card-notes-border: #eab308;
+      --card-upcoming-bg: #020617;
+      --card-upcoming-border: #6366f1;
+      --card-health-bg: #020617;
+      --card-health-border: #22c55e;
+      --card-theme-bg: #020617;
+      --card-theme-border: #4b5563;
+    }
+
+    body.theme-night-matrix {
+      --bg: radial-gradient(circle at top, #000000 0, #020617 60%, #000000 100%);
+      --page-bg: rgba(3, 7, 18, 0.97);
+      --text-main: #d1fae5;
+      --text-muted: #6ee7b7;
+      --border-strong: rgba(34, 197, 94, 0.9);
+      --chip-bg: #020617;
+      --chip-border: #22c55e;
+      --card-top-bg: #020617;
+      --card-top-border: #22c55e;
+      --card-plan-bg: #020617;
+      --card-plan-border: #16a34a;
+      --card-checklist-bg: #022c22;
+      --card-checklist-border: #22c55e;
+      --card-nav-bg: #020617;
+      --card-nav-border: #16a34a;
+      --card-notes-bg: #022c22;
+      --card-notes-border: #22c55e;
+      --card-upcoming-bg: #020617;
+      --card-upcoming-border: #22c55e;
+      --card-health-bg: #022c22;
+      --card-health-border: #4ade80;
+      --card-theme-bg: #020617;
+      --card-theme-border: #22c55e;
+    }
+
+    body.theme-night-tron {
+      --bg: radial-gradient(circle at top, #020617 0, #0b1120 60%, #020617 100%);
+      --page-bg: rgba(15, 23, 42, 0.97);
+      --text-main: #e0f2fe;
+      --text-muted: #a5b4fc;
+      --border-strong: rgba(56, 189, 248, 0.9);
+      --chip-bg: #020617;
+      --chip-border: #38bdf8;
+      --card-top-bg: #020617;
+      --card-top-border: #38bdf8;
+      --card-plan-bg: #020617;
+      --card-plan-border: #6366f1;
+      --card-checklist-bg: #020617;
+      --card-checklist-border: #22c55e;
+      --card-nav-bg: #020617;
+      --card-nav-border: #38bdf8;
+      --card-notes-bg: #111827;
+      --card-notes-border: #f97316;
+      --card-upcoming-bg: #020617;
+      --card-upcoming-border: #6366f1;
+      --card-health-bg: #020617;
+      --card-health-border: #22c55e;
+      --card-theme-bg: #020617;
+      --card-theme-border: #38bdf8;
+    }
+
+    /* ========= Layout / components ========= */
+
+    .page-bubble {
+      max-width: 1280px;
+      margin: 1.25rem auto;
+      padding: 1.5rem 1.5rem 1rem;
+      background: var(--page-bg);
+      border-radius: 32px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+      border: 1px solid var(--border-strong);
+      backdrop-filter: blur(18px);
+      color: var(--text-main);
+    }
+
+    .app-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      letter-spacing: -0.03em;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.35rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .date-display {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .print-btn,
+    .zen-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.3rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .print-btn:hover,
+    .zen-btn:hover {
+      background: #e0f2fe;
+    }
+
+    .zen-btn.active {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #4f46e5;
+    }
+
+    .card {
+      border-radius: 18px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+      border: 1px solid var(--border-strong);
+      backdrop-filter: blur(8px);
+      color: var(--text-main);
+    }
+
+    .card-section-title {
+      margin: 0 0 0.35rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .card-top        { background: var(--card-top-bg);        border-color: var(--card-top-border); }
+    .card-plan       { background: var(--card-plan-bg);       border-color: var(--card-plan-border); }
+    .card-checklist  { background: var(--card-checklist-bg);  border-color: var(--card-checklist-border); }
+    .card-footer-nav { background: var(--card-nav-bg);        border-color: var(--card-nav-border); }
+    .card-footer-notes { background: var(--card-notes-bg);    border-color: var(--card-notes-border); }
+    .card-footer-upcoming { background: var(--card-upcoming-bg); border-color: var(--card-upcoming-border); }
+    .card-footer-health { background: var(--card-health-bg);  border-color: var(--card-health-border); }
+    .card-footer-theme { background: var(--card-theme-bg);    border-color: var(--card-theme-border); }
+
+    .goals-row-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .goals-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .goals-row-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .column-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .goals-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .goals-row-line {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: nowrap;
+    }
+
+    .goal-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--chip-border);
+      background: var(--chip-bg);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      cursor: grab;
+      user-select: none;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+      max-width: 13rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .goal-bubble:hover {
+      background: #e0f2fe;
+      box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.6);
+      transform: translateY(-1px);
+      border-color: rgba(129, 140, 248, 0.9);
+    }
+
+    .goal-bubble.active {
+      background: #e0e7ff;
+      border-color: #818cf8;
+      box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.9);
+    }
+
+    .goal-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .goal-badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #4f46e5;
+      border: 1px solid #bfdbfe;
+    }
+
+    .goal-edit-btn,
+    .goal-delete-btn {
+      border: none;
+      background: transparent;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .goal-edit-btn {
+      color: var(--text-muted);
+    }
+
+    .goal-edit-btn:hover {
+      color: #4f46e5;
+    }
+
+    .goal-delete-btn {
+      color: #b91c1c;
+    }
+
+    .goal-delete-btn:hover {
+      color: #dc2626;
+    }
+
+    .main-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      min-height: 340px;
+    }
+
+    @media (max-width: 900px) {
+      .main-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .column-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .droptarget {
+      border: 1px dashed var(--border-strong);
+      border-radius: 14px;
+      padding: 0.75rem;
+      min-height: 130px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .droptarget.drag-over {
+      border-color: #7c3aed;
+      background: #f5f3ff;
+    }
+
+    .goal-card {
+      background: var(--chip-bg);
+      border-radius: 10px;
+      padding: 0.6rem 0.7rem;
+      border: 1px solid var(--chip-border);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .goal-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .goal-card-title {
+      font-weight: 500;
+    }
+
+    .goal-card-remove {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.1rem 0.3rem;
+      border-radius: 6px;
+    }
+
+    .goal-card-remove:hover {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .goal-card ul {
+      padding-left: 1.1rem;
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Checklist */
+
+    .completion-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .completion-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      min-width: 70px;
+    }
+
+    .completion-label strong {
+      color: var(--text-main);
+    }
+
+    .completion-bar {
+      flex: 1;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.2);
+      overflow: hidden;
+    }
+
+    .completion-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #22c55e, #4ade80);
+      transition: width 0.2s ease;
+    }
+
+    .checklist-item {
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      justify-content: space-between;
+      cursor: grab;
+    }
+
+    .checklist-item.dragging {
+      opacity: 0.6;
+    }
+
+    .checklist-item-main {
+      flex: 1;
+      display: flex;
+    }
+
+    .checklist-item label {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex: 1;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #4f46e5;
+    }
+
+    .checklist-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .schedule-btn,
+    .checklist-edit-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .schedule-btn:hover,
+    .checklist-edit-btn:hover {
+      background: #e0f2fe;
+    }
+
+    .checklist-delete-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: #b91c1c;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.45rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .checklist-delete-btn:hover {
+      background: #fee2e2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    .checklist-empty {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .new-goal-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.4rem;
+      align-items: center;
+    }
+
+    .new-goal-form input {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      min-width: 160px;
+    }
+
+    .new-goal-form button {
+      border-radius: 999px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 500;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+    }
+
+    .new-goal-form button:hover {
+      background: #4338ca;
+    }
+
+    /* AI goal generator */
+
+    .ai-goal-section {
+      margin-top: 0.5rem;
+      border-top: 1px dashed var(--border-strong);
+      padding-top: 0.4rem;
+    }
+
+    .ai-goal-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .ai-goal-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .ai-goal-row input {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .ai-goal-row button {
+      border-radius: 999px;
+      border: none;
+      background: #16a34a;
+      color: white;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 500;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);
+    }
+
+    .ai-goal-row button:hover {
+      background: #15803d;
+    }
+
+    .add-task-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      align-items: center;
+    }
+
+    .add-task-inline input {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      min-width: 220px;
+    }
+
+    .add-task-inline button {
+      border-radius: 999px;
+      border: none;
+      background: #0ea5e9;
+      color: white;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 500;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+    }
+
+    .add-task-inline button:hover {
+      background: #0284c7;
+    }
+
+    footer {
+      margin-top: 0.5rem;
+    }
+
+    /* Tabs */
+
+    .tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .tab-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .tab-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .calendar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .date-nav button {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .date-nav button:hover {
+      background: #e0f2fe;
+    }
+
+    .date-nav-current {
+      font-weight: 500;
+    }
+
+    .stats {
+      color: var(--text-muted);
+    }
+
+    .carry-forward-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.5);
+      background: #ecfdf3;
+      color: #166534;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .carry-forward-btn:hover {
+      background: #bbf7d0;
+    }
+
+    .hint-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    #daily-notes {
+      width: 100%;
+      min-height: 70px;
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      padding: 0.5rem 0.6rem;
+      font-size: 0.85rem;
+      resize: none;
+      overflow: hidden;
+      background: #fefce8;
+      color: var(--text-main);
+    }
+
+    #upcoming-list {
+      font-size: 0.8rem;
+      color: var(--text-main);
+    }
+
+    #upcoming-list ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    #upcoming-list li {
+      margin-bottom: 0.35rem;
+    }
+
+    #upcoming-list strong {
+      font-weight: 600;
+    }
+
+    .upcoming-task-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--border-strong);
+      margin-left: 0.25rem;
+      margin-bottom: 0.2rem;
+      font-size: 0.75rem;
+    }
+
+    .upcoming-delete-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: #b91c1c;
+      padding: 0;
+    }
+
+    .upcoming-delete-btn:hover {
+      color: #dc2626;
+    }
+
+    .health-row {
+      margin-top: 0.25rem;
+      display: grid;
+      grid-template-columns: 1.1fr 1.1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 900px) {
+      .health-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .health-section {
+      border-radius: 14px;
+      border: 1px dashed var(--border-strong);
+      padding: 0.6rem 0.7rem;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .health-section h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .health-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+    }
+
+    .health-fields input[type="text"],
+    .health-fields input[type="number"],
+    .health-fields select {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      min-width: 0;
+    }
+
+    .health-fields textarea {
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
+      min-height: 40px;
+      resize: none;
+      overflow: hidden;
+    }
+
+    .rating-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+    }
+
+    .rating-label input[type="range"] {
+      flex: 1;
+    }
+
+    .rating-label span {
+      min-width: 1.5rem;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .activity-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: -0.2rem;
+    }
+
+    .profile-fields {
+      margin-top: 0.5rem;
+      border-top: 1px dashed var(--border-strong);
+      padding-top: 0.4rem;
+    }
+
+    .profile-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .profile-row input,
+    .profile-row select {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    #bmr-display {
+      font-size: 0.8rem;
+      margin-top: 0.15rem;
+    }
+
+    .health-summary {
+      margin-top: 0.75rem;
+      border-radius: 14px;
+      border: 1px dashed var(--border-strong);
+      padding: 0.6rem 0.7rem;
+      background: rgba(255, 255, 255, 0.7);
+      font-size: 0.78rem;
+    }
+
+    .mini-calendars {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 900px) {
+      .mini-calendars {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .mini-calendar-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .mini-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.2rem;
+    }
+
+    .mini-day {
+      border-radius: 6px;
+      height: 20px;
+      text-align: center;
+      font-size: 0.65rem;
+      line-height: 20px;
+      color: #111827;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      cursor: pointer;
+    }
+
+    .mini-day.no-data {
+      background: #e5e7eb;
+      color: #6b7280;
+    }
+
+    .projection {
+      margin-top: 0.5rem;
+    }
+
+    .projection-row {
+      margin-bottom: 0.2rem;
+    }
+
+    #calorie-summary strong {
+      font-weight: 700;
+    }
+
+    .theme-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      justify-content: flex-start;
+      font-size: 0.8rem;
+    }
+
+    .theme-selector label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-right: 0.25rem;
+    }
+
+    .theme-button {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      cursor: pointer;
+    }
+
+    .theme-button.active {
+      background: #4f46e5;
+      color: white;
+      border-color: #4f46e5;
+    }
+
+    .save-controls {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .save-controls button {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.3rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .save-controls button:hover {
+      background: #e0f2fe;
+    }
+
+    .save-controls label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+    }
+
+    .save-controls input[type="file"] {
+      display: none;
+    }
+
+    .auth-bar {
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .auth-bar input {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+    }
+
+    .auth-bar button {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .auth-bar button:hover {
+      background: #e0f2fe;
+    }
+
+    .auth-status {
+      font-weight: 500;
+    }
+
+    .upcoming-link {
+      border: none;
+      background: transparent;
+      text-decoration: underline;
+      cursor: pointer;
+      font: inherit;
+      padding: 0;
+      color: inherit;
+    }
+
+    .upcoming-link:hover {
+      text-decoration-thickness: 2px;
+    }
+
+    .goals-row::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .goals-row::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.6);
+      border-radius: 999px;
+    }
+
+    /* Print summary */
+
+    .print-summary {
+      display: none;
+      max-width: 800px;
+      margin: 1rem auto;
+      padding: 1.5rem;
+      background: var(--print-bg);
+      color: var(--print-text);
+      font-size: 0.9rem;
+    }
+
+    .print-summary h1 {
+      margin-top: 0;
+      font-size: 1.4rem;
+    }
+
+    .print-summary h2 {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .print-summary h3 {
+      margin-top: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .print-summary pre {
+      background: #f3f4f6;
+      padding: 0.75rem;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+
+    body.print-mode .page-bubble {
+      display: none;
+    }
+
+    body.print-mode .print-summary {
+      display: block;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .page-bubble {
+        display: none !important;
+      }
+      .print-summary {
+        display: block !important;
+        box-shadow: none !important;
+      }
+    }
+
+    /* Zen / focus mode */
+
+    body.focus-mode .card-top,
+    body.focus-mode footer,
+    body.focus-mode .card-footer-nav,
+    body.focus-mode .card-footer-notes,
+    body.focus-mode .card-footer-upcoming,
+    body.focus-mode .card-footer-health,
+    body.focus-mode .card-footer-theme {
+      display: none !important;
+    }
+
+    body.focus-mode .page-bubble {
+      max-width: 900px;
+    }
+
+    body.focus-mode .main-columns {
+      grid-template-columns: 1fr;
+    }
+
+    body.focus-mode .card-plan {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-bubble">
+    <div class="app-shell">
+      <header>
+        <div class="header-left">
+          <h1>Tomorrow Planner</h1>
+        </div>
+        <div class="header-right">
+          <div class="date-display" id="header-date"></div>
+          <div class="header-actions">
+            <button type="button" id="zen-toggle-btn" class="zen-btn">🧘 Zen</button>
+            <button type="button" id="print-summary-btn" class="print-btn">🖨 Print</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Auth bar -->
+      <div class="auth-bar" id="auth-bar">
+        <div id="auth-logged-out">
+          <span>Cloud sync:</span>
+          <input type="email" id="auth-email" placeholder="Email" />
+          <input type="password" id="auth-password" placeholder="Password" />
+          <button type="button" id="auth-register-btn">Register</button>
+          <button type="button" id="auth-login-btn">Log in</button>
+        </div>
+        <div id="auth-logged-in" style="display:none;">
+          <span class="auth-status" id="auth-user-label"></span>
+          <button type="button" id="auth-logout-btn">Log out</button>
+        </div>
+      </div>
+      <div class="hint-text" id="auth-hint">
+        Log in to sync your planner to the cloud. If you stay logged out, everything is saved only on this device.
+      </div>
+
+      <!-- Top row: goals as bubbles + new goal form + AI goal generator -->
+      <div class="card card-top">
+        <div class="goals-row-wrapper">
+          <div class="goals-row-header">
+            <h2>🎯 Pick what Future You wants to do</h2>
+            <span class="column-subtitle">Click or drag bubbles into “Tomorrow’s Plan” · Edit or delete any bubble</span>
+          </div>
+          <div class="goals-row" id="goals-row"></div>
+
+          <form class="new-goal-form" id="new-goal-form">
+            <input
+              type="text"
+              id="new-goal-name"
+              placeholder="New tomorrow goal (e.g. Meal prep, Study cardio)"
+              required
+            />
+            <input
+              type="text"
+              id="new-goal-tasks"
+              placeholder="What needs to happen today? (comma-separated tasks)"
+              required
+            />
+            <button type="submit">Add goal</button>
+          </form>
+          <div class="hint-text">
+            Tasks like “Lay out clothes, Charge headphones, Check gym hours” will be split into separate checklist items.
+          </div>
+
+          <div class="ai-goal-section">
+            <div class="ai-goal-label">AI goal helper (optional)</div>
+            <div class="ai-goal-row">
+              <input type="text" id="ai-goal-prompt" placeholder="Describe what Future You wants to do (e.g. run 5K, big leg day, clean garage, study boards)" />
+              <button type="button" id="ai-goal-generate-btn">✨ Create goal</button>
+            </div>
+            <div class="hint-text">
+              The bubble name will be exactly what you type. The helper suggests a checklist for today based on your description.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main area: tomorrow plan + today checklist -->
+      <div class="main-columns">
+        <div class="card card-plan">
+          <div class="column-header">
+            <div>
+              <h2>🌅 Tomorrow’s Plan</h2>
+              <div class="column-subtitle">Goals you’ve committed to for the next day</div>
+            </div>
+          </div>
+          <div id="tomorrow-plan" class="droptarget"></div>
+          <div class="hint-text">
+            Drag a bubble here, or click a bubble to toggle it on/off.
+          </div>
+        </div>
+
+        <div class="card card-checklist">
+          <div class="column-header">
+            <div>
+              <h2>✅ Today’s Checklist</h2>
+              <div class="column-subtitle">Prerequisites for your tomorrow goals + extra one-off tasks</div>
+            </div>
+          </div>
+
+          <!-- Completion meter -->
+          <div class="completion-row">
+            <div class="completion-label"><strong id="completion-perc">0%</strong> done</div>
+            <div class="completion-bar">
+              <div class="completion-bar-fill" id="completion-bar-fill"></div>
+            </div>
+          </div>
+
+          <div id="checklist"></div>
+
+          <!-- Add extra checklist bullet without making a new goal -->
+          <form class="add-task-inline" id="new-checklist-task-form">
+            <input
+              type="text"
+              id="new-checklist-task"
+              placeholder="Add a one-off task just for today"
+            />
+            <button type="submit">Add task</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Footer: tabbed -->
+      <footer>
+        <div class="tabs">
+          <div class="tab-buttons">
+            <button type="button" class="tab-btn active" data-tab="day">📅 Day & Notes</button>
+            <button type="button" class="tab-btn" data-tab="health">💪 Health</button>
+            <button type="button" class="tab-btn" data-tab="settings">⚙️ Settings</button>
+          </div>
+
+          <!-- Day & Notes tab -->
+          <div class="tab-content active" data-tab="day">
+            <div class="card card-footer-nav">
+              <h3 class="card-section-title">📆 Day navigation & checklist summary</h3>
+              <div class="calendar-row">
+                <div class="date-nav">
+                  <button type="button" id="prev-day-btn">◀ Prev day</button>
+                  <span class="date-nav-current" id="current-day-label"></span>
+                  <button type="button" id="next-day-btn">Next day ▶</button>
+                </div>
+
+                <div class="stats" id="task-stats"></div>
+
+                <button type="button" class="carry-forward-btn" id="carry-forward-btn">
+                  Carry incomplete tasks to next day
+                </button>
+              </div>
+              <div class="hint-text">
+                Use the arrows to review other days. Carry forward will copy any unchecked tasks (including one-off ones) into the next day’s checklist.
+              </div>
+            </div>
+
+            <div class="card card-footer-notes">
+              <h3 class="card-section-title">📝 Daily notes</h3>
+              <textarea id="daily-notes" placeholder="Jot down anything about this day..."></textarea>
+            </div>
+
+            <div class="card card-footer-upcoming">
+              <h3 class="card-section-title">📌 Upcoming scheduled tasks</h3>
+              <div id="upcoming-list"></div>
+            </div>
+          </div>
+
+          <!-- Health tab -->
+          <div class="tab-content" data-tab="health">
+            <div class="card card-footer-health">
+              <h3 class="card-section-title">💪 Exercise & 🍽 Diet overview</h3>
+
+              <div class="health-row">
+                <div class="health-section" id="exercise-section">
+                  <h3>Exercise</h3>
+                  <div class="health-fields">
+                    <label>Exercise details:</label>
+                    <textarea id="exercise-notes" placeholder="What did you do? Sets, reps, distance, etc."></textarea>
+                    <label class="rating-label">
+                      Exercise rating:
+                      <input type="range" id="exercise-rating" min="1" max="10">
+                      <span id="exercise-rating-value">-</span>
+                    </label>
+                    <div class="activity-hint" id="exercise-activity-label"></div>
+                  </div>
+                  <div class="profile-fields">
+                    <div class="profile-row">
+                      <input type="number" id="profile-weight" placeholder="Weight (lb)">
+                      <input type="number" id="profile-height" placeholder="Height (in)">
+                    </div>
+                    <div class="profile-row">
+                      <input type="number" id="profile-age" placeholder="Age (years)">
+                      <select id="profile-sex">
+                        <option value="">Sex</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div class="hint-text" id="bmr-display">BMR: basic – · adjusted –</div>
+                  </div>
+                </div>
+
+                <div class="health-section" id="diet-section">
+                  <h3>Diet & calories</h3>
+                  <div class="health-fields">
+                    <label>
+                      Target calories:
+                      <input type="number" id="diet-target" min="0" step="10" placeholder="e.g. 2200">
+                    </label>
+                    <label>
+                      Calories consumed:
+                      <input type="number" id="diet-consumed" min="0" step="10">
+                    </label>
+                    <label class="rating-label">
+                      Food day rating:
+                      <input type="range" id="diet-rating" min="1" max="10">
+                      <span id="diet-rating-value">-</span>
+                    </label>
+                    <div class="activity-hint" id="diet-quality-label"></div>
+                    <div class="hint-text" id="diet-delta-display">Today’s calories: – (set target & consumed)</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="health-summary">
+                <div class="mini-calendars">
+                  <div class="mini-calendar">
+                    <div class="mini-calendar-title">Exercise past 4 weeks</div>
+                    <div class="mini-calendar-grid" id="exercise-mini-calendar"></div>
+                  </div>
+                  <div class="mini-calendar">
+                    <div class="mini-calendar-title">Food past 4 weeks</div>
+                    <div class="mini-calendar-grid" id="diet-mini-calendar"></div>
+                  </div>
+                </div>
+                <div class="projection">
+                  <div class="projection-row" id="calorie-summary"></div>
+                  <div class="projection-row" id="weight-projection"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings tab -->
+          <div class="tab-content" data-tab="settings">
+            <div class="card card-footer-theme">
+              <h3 class="card-section-title">🎨 Themes & backup</h3>
+              <div class="theme-selector">
+                <label>Color theme:</label>
+                <button type="button" class="theme-button" data-theme="calm">Calm</button>
+                <button type="button" class="theme-button" data-theme="pastel-sunrise">Pastel sunrise</button>
+                <button type="button" class="theme-button" data-theme="pastel-lilac">Pastel lilac</button>
+                <button type="button" class="theme-button" data-theme="pastel-mint">Pastel mint</button>
+                <button type="button" class="theme-button" data-theme="warm-sand">Warm sand</button>
+                <button type="button" class="theme-button" data-theme="wood-journal">Wood / journal</button>
+                <button type="button" class="theme-button" data-theme="hot-pink">Hot pink</button>
+                <button type="button" class="theme-button" data-theme="night-moon">Night moon</button>
+                <button type="button" class="theme-button" data-theme="night-matrix">Night matrix</button>
+                <button type="button" class="theme-button" data-theme="night-tron">Night TRON</button>
+              </div>
+
+              <div class="save-controls">
+                <span>Backup:</span>
+                <button type="button" id="save-state-btn">Save backup file</button>
+                <label for="load-state-input">
+                  Load backup
+                  <input type="file" id="load-state-input" accept="application/json" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Hidden print summary container -->
+  <div class="print-summary" id="print-summary"></div>
+
+  <script>
+    // ---------- Utilities ----------
+    function formatDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatHumanDate(date) {
+      return date.toLocaleDateString(undefined, {
+        weekday: "long",
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function parseDateKey(key) {
+      const [y, m, d] = key.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function getRecentDateKeys(anchorDate, daysBack = 27) {
+      const keys = [];
+      const base = new Date(
+        anchorDate.getFullYear(),
+        anchorDate.getMonth(),
+        anchorDate.getDate()
+      );
+      for (let i = daysBack; i >= 0; i--) {
+        const d = new Date(
+          base.getFullYear(),
+          base.getMonth(),
+          base.getDate() - i
+        );
+        keys.push(formatDateKey(d));
+      }
+      return keys;
+    }
+
+    function autoResizeTextarea(el) {
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function playSound(type) {
+      // sounds disabled
+    }
+
+    // ---------- Smarter offline "AI" generator ----------
+    function generateGoalFromPrompt(promptText) {
+      const text = promptText.trim();
+      const lower = text.toLowerCase();
+
+      if (!text) return null;
+
+      // Running / cardio
+      if (lower.includes("5k") || lower.includes("run") || lower.includes("jog") || lower.includes("cardio")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Pick tomorrow’s distance or time goal",
+            "Check weather and plan route or treadmill",
+            "Lay out running clothes and shoes",
+            "Charge headphones / watch",
+            "Pre-fill water bottle and place it in the fridge"
+          ]
+        };
+      }
+
+      // Strength / lifting
+      if (lower.includes("lift") || lower.includes("strength") || lower.includes("weights") || lower.includes("leg day") || lower.includes("push day") || lower.includes("pull day")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Choose tomorrow’s workout (e.g. legs / push / pull)",
+            "Write down the exercises and sets you’ll do",
+            "Pack gym bag (shoes, belt, straps, towel)",
+            "Charge headphones",
+            "Check gym hours and block time on calendar"
+          ]
+        };
+      }
+
+      // Yoga / stretching / mobility
+      if (lower.includes("yoga") || lower.includes("stretch") || lower.includes("mobility")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Pick a routine or video for tomorrow",
+            "Lay out mat and comfortable clothes",
+            "Choose a quiet spot and clear the floor space",
+            "Set a specific time in the calendar",
+            "Decide a short ‘win condition’ (e.g. 10–15 minutes)"
+          ]
+        };
+      }
+
+      // Study / exam / boards / reading
+      if (lower.includes("study") || lower.includes("exam") || lower.includes("test") || lower.includes("boards") || lower.includes("reading")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Pick the exact topic or chapters for tomorrow",
+            "Gather notes, textbooks, and references in one place",
+            "Print or queue key practice questions",
+            "Block focused study time with a start and end",
+            "Prepare a distraction-free spot (charger, water, headphones)"
+          ]
+        };
+      }
+
+      // Cleaning / decluttering / organizing
+      if (lower.includes("clean") || lower.includes("declutter") || lower.includes("tidy") || lower.includes("organize") || lower.includes("garage")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Choose one specific area (desk, closet, drawer, garage zone)",
+            "Grab trash bags and donation box",
+            "Set a 20–30 minute timer for tomorrow’s session",
+            "Move any big obstacles out of the way now",
+            "Pick a playlist or podcast to use while you clean"
+          ]
+        };
+      }
+
+      // Meal prep / cooking / diet
+      if (lower.includes("meal") || lower.includes("prep") || lower.includes("cook") || lower.includes("protein") || lower.includes("diet")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Decide tomorrow’s recipe or protein source",
+            "Check pantry and fridge for ingredients",
+            "Make a quick shopping list if anything is missing",
+            "Clean the key containers or shaker bottle",
+            "Clear a small space on the counter or fridge"
+          ]
+        };
+      }
+
+      // Sleep / wake earlier / morning routine
+      if (lower.includes("sleep") || lower.includes("bed") || lower.includes("wake") || lower.includes("morning routine")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Set target bedtime and wake time",
+            "Set alarm and place phone or clock away from the bed",
+            "Lay out clothes for tomorrow morning",
+            "Decide a simple breakfast",
+            "Pick one relaxing wind-down activity"
+          ]
+        };
+      }
+
+      // Travel / trip / packing / flight
+      if (lower.includes("trip") || lower.includes("travel") || lower.includes("flight") || lower.includes("vacation") || lower.includes("luggage")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Confirm travel dates, times, and confirmation numbers",
+            "Make a short packing list (clothes, chargers, meds)",
+            "Lay out or partially pack one bag",
+            "Check transport to airport / station or parking",
+            "Set a reminder for passport / ID / tickets"
+          ]
+        };
+      }
+
+      // Appointments (doctor, dentist, etc.)
+      if (lower.includes("appointment") || lower.includes("dentist") || lower.includes("doctor") || lower.includes("checkup")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Confirm appointment time and location",
+            "Add the appointment to your calendar",
+            "Gather insurance card / ID / paperwork",
+            "Write down 2–3 questions or concerns to bring",
+            "Plan transport and leave-time"
+          ]
+        };
+      }
+
+      // Kids / family routine
+      if (lower.includes("kid") || lower.includes("child") || lower.includes("family") || lower.includes("bedtime routine")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Decide the exact window of time you’ll spend with them",
+            "Pick 1–2 simple activities (game, walk, reading)",
+            "Lay out any toys, books, or supplies",
+            "Communicate the plan with anyone else involved",
+            "Set a reminder so it doesn’t get lost in the day"
+          ]
+        };
+      }
+
+      // Paperwork / admin / emails / bills
+      if (lower.includes("paperwork") || lower.includes("email") || lower.includes("inbox") || lower.includes("bills") || lower.includes("budget")) {
+        return {
+          name: text,
+          todayTasks: [
+            "List the 3 most important admin tasks",
+            "Collect any documents or logins you’ll need",
+            "Block a focused 20–30 minute admin time",
+            "Decide what ‘done’ means for tomorrow",
+            "Set a reminder or calendar block"
+          ]
+        };
+      }
+
+      // Work project / presentation / report
+      if (lower.includes("report") || lower.includes("presentation") || lower.includes("slides") || lower.includes("project")) {
+        return {
+          name: text,
+          todayTasks: [
+            "Clarify the next measurable step (outline, first draft, or polish)",
+            "Gather all relevant files in one folder",
+            "Block uninterrupted time for tomorrow",
+            "Write down the 3 main points you want to hit",
+            "Decide who needs to see it and when"
+          ]
+        };
+      }
+
+      // Generic fallback
+      return {
+        name: text,
+        todayTasks: [
+          `Clarify what “${text}” means for tomorrow (write 1 sentence)`,
+          "Block dedicated time for it in your calendar",
+          "List 2–3 small prep steps you can do today",
+          "Gather any tools, clothes, or documents you’ll need",
+          "Write it in a visible place so you don’t forget"
+        ]
+      };
+    }
+
+    // ---------- Default goals ----------
+    const DEFAULT_GOALS = [
+      {
+        id: "workout",
+        name: "Workout at the gym",
+        todayTasks: [
+          "Lay out gym clothes",
+          "Charge headphones",
+          "Check gym hours",
+          "Block time in calendar for workout"
+        ]
+      },
+      {
+        id: "protein_shake",
+        name: "Have protein/creatine shake after workout",
+        todayTasks: [
+          "Make sure you have protein powder",
+          "Make sure you have creatine",
+          "Clean shaker bottle",
+          "Put water or milk in the fridge to chill"
+        ]
+      },
+      {
+        id: "early_wake",
+        name: "Wake up early tomorrow",
+        todayTasks: [
+          "Set alarm for tomorrow",
+          "Decide bedtime",
+          "Put phone or clock away from bed",
+          "Plan breakfast"
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = "tomorrowPlannerState_v10";
+
+    let state = {
+      goals: DEFAULT_GOALS,
+      days: {},
+      theme: "calm",
+      futureTasks: {},
+      profile: {
+        sex: "",
+        age: null,
+        weightLbs: null,
+        heightIn: null
+      },
+      defaultTargetCalories: null,
+      lastVisitDateKey: null
+    };
+
+    let currentDate = new Date();
+    let draggedTaskText = null;
+
+    function ensureProfileDefaults() {
+      if (!state.profile) {
+        state.profile = {
+          sex: "",
+          age: null,
+          weightLbs: null,
+          heightIn: null
+        };
+      } else {
+        if (typeof state.profile.sex === "undefined") state.profile.sex = "";
+        if (typeof state.profile.age === "undefined") state.profile.age = null;
+        if (typeof state.profile.weightLbs === "undefined") state.profile.weightLbs = null;
+        if (typeof state.profile.heightIn === "undefined") state.profile.heightIn = null;
+      }
+      if (typeof state.defaultTargetCalories === "undefined") {
+        state.defaultTargetCalories = null;
+      }
+      if (typeof state.lastVisitDateKey === "undefined") {
+        state.lastVisitDateKey = null;
+      }
+    }
+
+    // ---------- Local persistence ----------
+    function loadStateLocal() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.goals && parsed.days) {
+          state = parsed;
+        }
+        if (!state.theme) state.theme = "calm";
+        if (!state.futureTasks) state.futureTasks = {};
+        ensureProfileDefaults();
+      } catch (e) {
+        console.warn("Failed to load local state, using defaults", e);
+      }
+    }
+
+    function saveStateLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getDayData(dateKey) {
+      if (!state.days[dateKey]) {
+        state.days[dateKey] = {
+          selectedGoalIds: [],
+          carriedTasks: [],
+          customTasks: [],
+          completed: {},
+          checklistOrder: [],
+          notes: "",
+          exercise: {
+            done: false,
+            type: "",
+            rating: null
+          },
+          diet: {
+            targetCalories: null,
+            consumedCalories: null,
+            rating: null
+          },
+          removedTasks: []
+        };
+      } else {
+        const d = state.days[dateKey];
+        if (!d.carriedTasks) d.carriedTasks = [];
+        if (!d.customTasks) d.customTasks = [];
+        if (!d.completed) d.completed = {};
+        if (!d.checklistOrder) d.checklistOrder = [];
+        if (typeof d.notes !== "string") d.notes = "";
+        if (!d.exercise) {
+          d.exercise = { done: false, type: "", rating: null };
+        } else {
+          if (typeof d.exercise.done === "undefined") d.exercise.done = false;
+          if (typeof d.exercise.type === "undefined") d.exercise.type = "";
+          if (typeof d.exercise.rating === "undefined") d.exercise.rating = null;
+        }
+        if (!d.diet) {
+          d.diet = { targetCalories: null, consumedCalories: null, rating: null };
+        } else {
+          if (typeof d.diet.targetCalories === "undefined") d.diet.targetCalories = null;
+          if (typeof d.diet.consumedCalories === "undefined") d.diet.consumedCalories = null;
+          if (typeof d.diet.rating === "undefined") d.diet.rating = null;
+        }
+        if (!d.removedTasks) d.removedTasks = [];
+      }
+      return state.days[dateKey];
+    }
+
+    function getGoalsMap() {
+      const map = {};
+      state.goals.forEach(g => {
+        map[g.id] = g;
+      });
+      return map;
+    }
+
+    // ---------- Firebase setup ----------
+    let firebaseEnabled = false;
+    let auth = null;
+    let db = null;
+    let currentUser = null;
+
+    function updateAuthUI() {
+      const outEl = document.getElementById("auth-logged-out");
+      const inEl = document.getElementById("auth-logged-in");
+      const userLabel = document.getElementById("auth-user-label");
+      const hintEl = document.getElementById("auth-hint");
+
+      if (!firebaseEnabled) {
+        if (outEl) outEl.style.display = "none";
+        if (inEl) inEl.style.display = "none";
+        if (hintEl) hintEl.textContent =
+          "Cloud sync is disabled (Firebase not configured). Everything is saved only on this device.";
+        return;
+      }
+
+      if (currentUser) {
+        if (outEl) outEl.style.display = "none";
+        if (inEl) inEl.style.display = "flex";
+        if (userLabel) userLabel.textContent = `Signed in as ${currentUser.email}`;
+        if (hintEl) hintEl.textContent =
+          "Your planner is synced to the cloud for this account.";
+      } else {
+        if (outEl) outEl.style.display = "flex";
+        if (inEl) inEl.style.display = "none";
+        if (hintEl) hintEl.textContent =
+          "Log in to sync your planner to the cloud. If you stay logged out, everything is saved only on this device.";
+      }
+    }
+
+    async function saveStateRemote() {
+      if (!firebaseEnabled || !currentUser || !db) return;
+      try {
+        await db.collection("users").doc(currentUser.uid).set({ state }, { merge: true });
+      } catch (e) {
+        console.error("Error saving remote state", e);
+      }
+    }
+
+    function saveState() {
+      saveStateLocal();
+      saveStateRemote();
+    }
+
+    async function loadUserStateFromFirestore(user) {
+      if (!firebaseEnabled || !db || !user) return;
+      try {
+        const docRef = db.collection("users").doc(user.uid);
+        const snap = await docRef.get();
+        if (snap.exists && snap.data().state) {
+          state = snap.data().state;
+          if (!state.theme) state.theme = "calm";
+          if (!state.futureTasks) state.futureTasks = {};
+          ensureProfileDefaults();
+        } else {
+          await docRef.set({ state }, { merge: true });
+        }
+        saveStateLocal();
+        applyTheme();
+        render();
+      } catch (e) {
+        console.error("Error loading remote state", e);
+      }
+    }
+
+    function setupFirebase() {
+      try {
+        // ---- PASTE YOUR REAL FIREBASE CONFIG HERE LATER ----
+const firebaseConfig = {
+  apiKey: "AIzaSyApYUr6J_71x1lSf07Dl5SVMsXzEXuagC8",
+  authDomain: "tomorrow-planner1.firebaseapp.com",
+  projectId: "tomorrow-planner1",
+  storageBucket: "tomorrow-planner1.firebasestorage.app",
+  messagingSenderId: "966584278328",
+  appId: "1:966584278328:web:a98f950c740eb72c7675cd"
+};
+        // ----------------------------------------------------
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        firebaseEnabled = true;
+
+        auth.onAuthStateChanged(async user => {
+          currentUser = user;
+          updateAuthUI();
+          if (user) {
+            await loadUserStateFromFirestore(user);
+          } else {
+            loadStateLocal();
+            applyTheme();
+            render();
+          }
+        });
+      } catch (e) {
+        console.warn("Firebase not configured or failed to initialize. Using local-only mode.", e);
+        firebaseEnabled = false;
+        updateAuthUI();
+      }
+    }
+
+    // ---------- Smart carry-forward on new day ----------
+    function smartCarryForwardIfNewDay() {
+      const today = new Date();
+      const todayKey = formatDateKey(today);
+      const prevKey = state.lastVisitDateKey;
+
+      if (prevKey && prevKey < todayKey) {
+        const prevDay = getDayData(prevKey);
+        const goalsMap = getGoalsMap();
+        const tasks = buildTaskList(goalsMap, prevDay);
+        const completedMap = prevDay.completed || {};
+        const incomplete = tasks.filter(t => !completedMap[t]);
+
+        if (incomplete.length > 0) {
+          const answer = confirm(
+            `You have ${incomplete.length} incomplete task(s) from ${formatHumanDate(parseDateKey(prevKey))}.\n\nCarry them forward to today?`
+          );
+          if (answer) {
+            const todayDay = getDayData(todayKey);
+            if (!todayDay.carriedTasks) todayDay.carriedTasks = [];
+            incomplete.forEach(t => {
+              if (!todayDay.carriedTasks.includes(t)) {
+                todayDay.carriedTasks.push(t);
+              }
+            });
+          }
+        }
+      }
+
+      state.lastVisitDateKey = todayKey;
+      saveState();
+    }
+
+    // ---------- Theme ----------
+    function applyTheme() {
+      const theme = state.theme || "calm";
+      const themes = [
+        "calm",
+        "pastel-sunrise",
+        "pastel-lilac",
+        "pastel-mint",
+        "warm-sand",
+        "wood-journal",
+        "hot-pink",
+        "night-moon",
+        "night-matrix",
+        "night-tron"
+      ];
+      document.body.classList.remove(...themes.map(t => "theme-" + t));
+      document.body.classList.add("theme-" + theme);
+
+      document.querySelectorAll(".theme-button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.theme === theme);
+      });
+    }
+
+    // ---------- Rendering ----------
+    const headerDateEl = document.getElementById("header-date");
+    const goalsRowEl = document.getElementById("goals-row");
+    const tomorrowPlanEl = document.getElementById("tomorrow-plan");
+    const checklistEl = document.getElementById("checklist");
+    const currentDayLabelEl = document.getElementById("current-day-label");
+    const taskStatsEl = document.getElementById("task-stats");
+    const upcomingListEl = document.getElementById("upcoming-list");
+    const dailyNotesEl = document.getElementById("daily-notes");
+
+    const exerciseNotesEl = document.getElementById("exercise-notes");
+    const exerciseRatingEl = document.getElementById("exercise-rating");
+    const exerciseRatingValueEl = document.getElementById("exercise-rating-value");
+    const exerciseActivityLabelEl = document.getElementById("exercise-activity-label");
+
+    const profileWeightEl = document.getElementById("profile-weight");
+    const profileHeightEl = document.getElementById("profile-height");
+    const profileAgeEl = document.getElementById("profile-age");
+    const profileSexEl = document.getElementById("profile-sex");
+    const bmrDisplayEl = document.getElementById("bmr-display");
+
+    const dietTargetEl = document.getElementById("diet-target");
+    const dietConsumedEl = document.getElementById("diet-consumed");
+    const dietRatingEl = document.getElementById("diet-rating");
+    const dietRatingValueEl = document.getElementById("diet-rating-value");
+    const dietQualityLabelEl = document.getElementById("diet-quality-label");
+    const dietDeltaDisplayEl = document.getElementById("diet-delta-display");
+
+    const exerciseMiniCalEl = document.getElementById("exercise-mini-calendar");
+    const dietMiniCalEl = document.getElementById("diet-mini-calendar");
+    const calorieSummaryEl = document.getElementById("calorie-summary");
+    const weightProjectionEl = document.getElementById("weight-projection");
+
+    const printSummaryBtn = document.getElementById("print-summary-btn");
+    const printSummaryEl = document.getElementById("print-summary");
+
+    const completionPercEl = document.getElementById("completion-perc");
+    const completionBarFillEl = document.getElementById("completion-bar-fill");
+
+    function render() {
+      const goalsMap = getGoalsMap();
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+
+      applyTheme();
+
+      const today = new Date();
+      headerDateEl.innerHTML = `
+        <div>Today: ${formatHumanDate(today)}</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+          Viewing: ${formatHumanDate(currentDate)}
+        </div>
+      `;
+
+      renderGoalBubbles(dayData);
+      renderTomorrowPlan(goalsMap, dayData);
+      renderChecklist(goalsMap, dayData);
+
+      currentDayLabelEl.textContent = `Viewing: ${formatHumanDate(currentDate)}`;
+
+      const { total, completed } = getTaskCounts(goalsMap, dayData);
+      if (total === 0) {
+        taskStatsEl.textContent = "No tasks yet for this day.";
+      } else {
+        taskStatsEl.textContent = `Completed ${completed} of ${total} tasks.`;
+      }
+      updateCompletionMeter(total, completed);
+
+      dailyNotesEl.value = dayData.notes || "";
+      autoResizeTextarea(dailyNotesEl);
+
+      renderUpcomingTasks();
+      renderHealthSection();
+    }
+
+    function renderGoalBubbles(dayData) {
+      goalsRowEl.innerHTML = "";
+      const pattern = [4, 3, 4];
+      let patternIndex = 0;
+      let i = 0;
+
+      while (i < state.goals.length) {
+        const rowDiv = document.createElement("div");
+        rowDiv.className = "goals-row-line";
+
+        const countThisRow = pattern[patternIndex % pattern.length];
+        for (let j = 0; j < countThisRow && i < state.goals.length; j++, i++) {
+          const goal = state.goals[i];
+          const bubble = document.createElement("button");
+          bubble.type = "button";
+          bubble.className =
+            "goal-bubble" +
+            (dayData.selectedGoalIds.includes(goal.id) ? " active" : "");
+          bubble.draggable = true;
+          bubble.dataset.goalId = goal.id;
+          bubble.innerHTML = `
+            <span class="goal-text">${goal.name}</span>
+            <span class="goal-badge">${goal.todayTasks.length} today</span>
+            <button type="button" class="goal-edit-btn" aria-label="Edit goal">✎</button>
+            <button type="button" class="goal-delete-btn" aria-label="Delete goal">✕</button>
+          `;
+
+          bubble.addEventListener("click", () =>
+            toggleGoalForCurrentDay(goal.id)
+          );
+          bubble.addEventListener("dragstart", onGoalDragStart);
+
+          const editBtn = bubble.querySelector(".goal-edit-btn");
+          editBtn.addEventListener("click", ev => {
+            ev.stopPropagation();
+            editGoal(goal.id);
+          });
+
+          const deleteBtn = bubble.querySelector(".goal-delete-btn");
+          deleteBtn.addEventListener("click", ev => {
+            ev.stopPropagation();
+            deleteGoal(goal.id);
+          });
+
+          rowDiv.appendChild(bubble);
+        }
+
+        goalsRowEl.appendChild(rowDiv);
+        patternIndex++;
+      }
+    }
+
+    function renderTomorrowPlan(goalsMap, dayData) {
+      tomorrowPlanEl.innerHTML = "";
+
+      const selectedGoals = dayData.selectedGoalIds
+        .map(id => goalsMap[id])
+        .filter(Boolean);
+
+      if (selectedGoals.length === 0) {
+        const p = document.createElement("p");
+        p.className = "checklist-empty";
+        p.textContent =
+          "No goals yet. Drag or click a bubble above to start planning.";
+        tomorrowPlanEl.appendChild(p);
+        return;
+      }
+
+      selectedGoals.forEach(goal => {
+        const card = document.createElement("div");
+        card.className = "goal-card";
+
+        const header = document.createElement("div");
+        header.className = "goal-card-header";
+
+        const title = document.createElement("div");
+        title.className = "goal-card-title";
+        title.textContent = goal.name;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "goal-card-remove";
+        removeBtn.textContent = "Remove";
+        removeBtn.addEventListener("click", () => {
+          toggleGoalForCurrentDay(goal.id);
+        });
+
+        header.appendChild(title);
+        header.appendChild(removeBtn);
+        card.appendChild(header);
+
+        const list = document.createElement("ul");
+        goal.todayTasks.forEach(task => {
+          const li = document.createElement("li");
+          li.textContent = task;
+          list.appendChild(li);
+        });
+        card.appendChild(list);
+
+        tomorrowPlanEl.appendChild(card);
+      });
+    }
+
+    function buildTaskList(goalsMap, dayData) {
+      const taskSet = new Set();
+      const dateKey = formatDateKey(currentDate);
+
+      // from goals
+      dayData.selectedGoalIds.forEach(id => {
+        const goal = goalsMap[id];
+        if (goal) {
+          goal.todayTasks.forEach(t => taskSet.add(t));
+        }
+      });
+
+      // carried + custom
+      (dayData.carriedTasks || []).forEach(t => taskSet.add(t));
+      (dayData.customTasks || []).forEach(t => taskSet.add(t));
+
+      // scheduled for this day
+      if (state.futureTasks && state.futureTasks[dateKey]) {
+        state.futureTasks[dateKey].forEach(t => taskSet.add(t));
+      }
+
+      let tasksArray = Array.from(taskSet);
+      const order = dayData.checklistOrder || [];
+
+      // sort according to saved order; unknown tasks go last
+      tasksArray.sort((a, b) => {
+        const ia = order.indexOf(a);
+        const ib = order.indexOf(b);
+        if (ia === -1 && ib === -1) return 0;
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+
+      // filter out any tasks user explicitly removed on this day
+      const removed = dayData.removedTasks || [];
+      tasksArray = tasksArray.filter(t => !removed.includes(t));
+
+      return tasksArray;
+    }
+
+    function renderChecklist(goalsMap, dayData) {
+      checklistEl.innerHTML = "";
+
+      const tasks = buildTaskList(goalsMap, dayData);
+
+      if (tasks.length === 0) {
+        const p = document.createElement("p");
+        p.className = "checklist-empty";
+        p.textContent =
+          "Once you choose goals, or add one-off tasks, they will show up here.";
+        checklistEl.appendChild(p);
+        return;
+      }
+
+      const completedMap = dayData.completed || {};
+
+      tasks.forEach(task => {
+        const div = document.createElement("div");
+        div.className = "checklist-item";
+        div.draggable = true;
+        div.dataset.task = task;
+        const id = "task-" + task.replace(/\s+/g, "-").toLowerCase();
+
+        const checked = !!completedMap[task];
+
+        div.innerHTML = `
+          <div class="checklist-item-main">
+            <label>
+              <input type="checkbox" id="${id}" ${checked ? "checked" : ""} data-task="${task}">
+              <span>${task}</span>
+            </label>
+          </div>
+          <div class="checklist-item-actions">
+            <button type="button" class="checklist-edit-btn" data-task="${task}" title="Edit task">✎</button>
+            <button type="button" class="schedule-btn" data-task="${task}" title="Schedule to future date">📅</button>
+            <button type="button" class="checklist-delete-btn" data-task="${task}" title="Delete task">✕</button>
+          </div>
+        `;
+
+        div.addEventListener("dragstart", () => {
+          draggedTaskText = task;
+          div.classList.add("dragging");
+        });
+        div.addEventListener("dragend", () => {
+          draggedTaskText = null;
+          div.classList.remove("dragging");
+        });
+
+        checklistEl.appendChild(div);
+      });
+    }
+
+    function getTaskCounts(goalsMap, dayData) {
+      const tasks = buildTaskList(goalsMap, dayData);
+      const completedMap = dayData.completed || {};
+      let completed = 0;
+      tasks.forEach(t => {
+        if (completedMap[t]) completed++;
+      });
+      return { total: tasks.length, completed };
+    }
+
+    function updateCompletionMeter(total, completed) {
+      if (!completionPercEl || !completionBarFillEl) return;
+      if (total === 0) {
+        completionPercEl.textContent = "0%";
+        completionBarFillEl.style.width = "0%";
+        return;
+      }
+      const pct = Math.round((completed / total) * 100);
+      completionPercEl.textContent = pct + "%";
+      completionBarFillEl.style.width = pct + "%";
+    }
+
+    function renderUpcomingTasks() {
+      upcomingListEl.innerHTML = "";
+
+      const todayKey = formatDateKey(currentDate);
+      const ft = state.futureTasks || {};
+      const keys = Object.keys(ft)
+        .filter(k => k > todayKey && ft[k] && ft[k].length > 0)
+        .sort();
+
+      if (keys.length === 0) {
+        upcomingListEl.textContent = "No scheduled future tasks beyond this day.";
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      keys.forEach(key => {
+        const dateTasks = ft[key];
+        const li = document.createElement("li");
+        const dateLabel = formatHumanDate(parseDateKey(key));
+
+        const strong = document.createElement("strong");
+        const dateBtn = document.createElement("button");
+        dateBtn.type = "button";
+        dateBtn.className = "upcoming-link";
+        dateBtn.dataset.date = key;
+        dateBtn.textContent = dateLabel;
+        strong.appendChild(dateBtn);
+        li.appendChild(strong);
+
+        const tasksContainer = document.createElement("span");
+        tasksContainer.className = "upcoming-tasks-container";
+
+        dateTasks.forEach(task => {
+          const chip = document.createElement("span");
+          chip.className = "upcoming-task-chip";
+
+          const textSpan = document.createElement("span");
+          textSpan.textContent = task;
+
+          const delBtn = document.createElement("button");
+          delBtn.type = "button";
+          delBtn.className = "upcoming-delete-btn";
+          delBtn.dataset.date = key;
+          delBtn.dataset.task = task;
+          delBtn.textContent = "✕";
+
+          chip.appendChild(textSpan);
+          chip.appendChild(delBtn);
+          tasksContainer.appendChild(chip);
+        });
+
+        li.appendChild(document.createTextNode(" "));
+        li.appendChild(tasksContainer);
+
+        ul.appendChild(li);
+      });
+
+      upcomingListEl.appendChild(ul);
+    }
+
+    upcomingListEl.addEventListener("click", e => {
+      const dateBtn = e.target.closest(".upcoming-link");
+      if (dateBtn && dateBtn.dataset.date) {
+        const dateKey = dateBtn.dataset.date;
+        currentDate = parseDateKey(dateKey);
+        render();
+        return;
+      }
+
+      const delBtn = e.target.closest(".upcoming-delete-btn");
+      if (delBtn && delBtn.dataset.date && delBtn.dataset.task) {
+        const dateKey = delBtn.dataset.date;
+        const task = delBtn.dataset.task;
+        if (!state.futureTasks || !state.futureTasks[dateKey]) return;
+        const confirmDelete = confirm(`Delete scheduled task "${task}" on ${formatHumanDate(parseDateKey(dateKey))}?`);
+        if (!confirmDelete) return;
+        state.futureTasks[dateKey] = state.futureTasks[dateKey].filter(t => t !== task);
+        if (state.futureTasks[dateKey].length === 0) {
+          delete state.futureTasks[dateKey];
+        }
+        saveState();
+        render();
+      }
+    });
+
+    // ---------- Health / BMR / ratings ----------
+    function calculateBMR(profile) {
+      if (!profile) return null;
+      const { sex, age, weightLbs, heightIn } = profile;
+      if (!sex || !age || !weightLbs || !heightIn) return null;
+      const weightKg = weightLbs * 0.453592;
+      const heightCm = heightIn * 2.54;
+      let bmr;
+      if (sex === "male") {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+      } else if (sex === "female") {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+      } else {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * age - 78;
+      }
+      return Math.round(bmr);
+    }
+
+    function getActivityFactorForRating(r) {
+      if (!r || r < 1) return 1.2;
+      if (r <= 2) return 1.2;
+      if (r <= 4) return 1.375;
+      if (r <= 6) return 1.55;
+      if (r <= 8) return 1.725;
+      return 1.9;
+    }
+
+    function getActivityLabelForRating(r) {
+      if (!r || r < 1) return "";
+      if (r <= 2) return "Sedentary (little or no exercise)";
+      if (r <= 4) return "Light activity";
+      if (r <= 6) return "Moderate activity";
+      if (r <= 8) return "Heavy / hard exercise";
+      return "Vigorous / very hard exercise";
+    }
+
+    function getDietLabelForRating(r) {
+      if (!r || r < 1) return "";
+      if (r <= 2) return "Rough day";
+      if (r <= 4) return "Not great";
+      if (r <= 6) return "Okay / mixed";
+      if (r <= 8) return "On track";
+      return "Dialed in";
+    }
+
+    function ratingToColor(r) {
+      if (!r || r < 1) return "#e5e7eb";
+      if (r <= 1) return "#7f1d1d";
+      if (r <= 2) return "#b91c1c";
+      if (r <= 3) return "#ef4444";
+      if (r <= 4) return "#f97316";
+      if (r <= 5) return "#facc15";
+      if (r <= 6) return "#a3e635";
+      if (r <= 7) return "#4ade80";
+      if (r <= 8) return "#22c55e";
+      if (r <= 9) return "#16a34a";
+      return "#166534";
+    }
+
+    function renderHealthSection() {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      const ex = dayData.exercise;
+      const di = dayData.diet;
+
+      exerciseNotesEl.value = ex.type || "";
+      autoResizeTextarea(exerciseNotesEl);
+
+      let exRatingVal = ex && ex.rating != null ? ex.rating : null;
+      if (exRatingVal != null) {
+        exerciseRatingEl.value = exRatingVal;
+        exerciseRatingValueEl.textContent = exRatingVal;
+      } else {
+        exerciseRatingEl.value = 5;
+        exerciseRatingValueEl.textContent = "-";
+      }
+      exerciseActivityLabelEl.textContent = getActivityLabelForRating(exRatingVal);
+
+      const p = state.profile || {};
+      profileWeightEl.value = p.weightLbs != null ? p.weightLbs : "";
+      profileHeightEl.value = p.heightIn != null ? p.heightIn : "";
+      profileAgeEl.value = p.age != null ? p.age : "";
+      profileSexEl.value = p.sex || "";
+
+      const baseBMR = calculateBMR(p);
+      const activityFactor = getActivityFactorForRating(exRatingVal);
+      const adjustedBMR = baseBMR != null ? Math.round(baseBMR * activityFactor) : null;
+
+      if (baseBMR != null) {
+        bmrDisplayEl.textContent =
+          `BMR: basic ${baseBMR.toLocaleString()} kcal · adjusted ${adjustedBMR != null ? adjustedBMR.toLocaleString() : "–"} kcal`;
+      } else {
+        bmrDisplayEl.textContent = "BMR: basic – · adjusted – (enter weight, height, age, sex)";
+      }
+
+      const effectiveTarget = di.targetCalories != null
+        ? di.targetCalories
+        : state.defaultTargetCalories;
+
+      dietTargetEl.value = effectiveTarget != null ? effectiveTarget : "";
+      dietConsumedEl.value = di.consumedCalories != null ? di.consumedCalories : "";
+      if (di.rating != null) {
+        dietRatingEl.value = di.rating;
+        dietRatingValueEl.textContent = di.rating;
+      } else {
+        dietRatingEl.value = 5;
+        dietRatingValueEl.textContent = "-";
+      }
+      dietQualityLabelEl.textContent = getDietLabelForRating(di.rating);
+
+      dietDeltaDisplayEl.style.fontWeight = "600";
+
+      if (effectiveTarget != null && di.consumedCalories != null) {
+        const diff = di.consumedCalories - effectiveTarget;
+        const absDiff = Math.abs(diff);
+        if (diff === 0) {
+          dietDeltaDisplayEl.textContent = "Today’s calories: on target.";
+          dietDeltaDisplayEl.style.color = "#0f172a";
+        } else if (diff > 0) {
+          dietDeltaDisplayEl.textContent = `Today’s calories: surplus of ${absDiff} kcal.`;
+          dietDeltaDisplayEl.style.color = "#b91c1c";
+        } else {
+          dietDeltaDisplayEl.textContent = `Today’s calories: deficit of ${absDiff} kcal.`;
+          dietDeltaDisplayEl.style.color = "#15803d";
+        }
+      } else {
+        dietDeltaDisplayEl.textContent = "Today’s calories: – (set target & consumed)";
+        dietDeltaDisplayEl.style.color = "var(--text-muted)";
+      }
+
+      renderMiniCalendars();
+      renderProjections();
+    }
+
+    function renderMiniCalendars() {
+      exerciseMiniCalEl.innerHTML = "";
+      dietMiniCalEl.innerHTML = "";
+
+      const keys = getRecentDateKeys(currentDate, 27);
+      keys.forEach(key => {
+        const d = parseDateKey(key);
+        const dayNum = d.getDate();
+        const dayData = state.days[key];
+
+        const ex = dayData && dayData.exercise ? dayData.exercise : null;
+        const di = dayData && dayData.diet ? dayData.diet : null;
+
+        const exRating = ex ? (ex.rating != null ? ex.rating : (ex.done ? 7 : null)) : null;
+        const dietRating = di ? (di.rating != null ? di.rating : null) : null;
+
+        const exDiv = document.createElement("div");
+        exDiv.className = "mini-day" + (exRating ? "" : " no-data");
+        exDiv.style.background = ratingToColor(exRating);
+        exDiv.dataset.date = key;
+        exDiv.title = `${formatHumanDate(d)} — exercise: ${
+          exRating ? exRating + "/10" : "no data"
+        }`;
+        exDiv.textContent = dayNum;
+        exerciseMiniCalEl.appendChild(exDiv);
+
+        const diDiv = document.createElement("div");
+        diDiv.className = "mini-day" + (dietRating ? "" : " no-data");
+        diDiv.style.background = ratingToColor(dietRating);
+        diDiv.dataset.date = key;
+        diDiv.title = `${formatHumanDate(d)} — food: ${
+          dietRating ? dietRating + "/10" : "no data"
+        }`;
+        diDiv.textContent = dayNum;
+        dietMiniCalEl.appendChild(diDiv);
+      });
+    }
+
+    function renderProjections() {
+      const currentKey = formatDateKey(currentDate);
+      const dayDataNow = getDayData(currentKey);
+      const dNow = dayDataNow.diet;
+      const targetNow = dNow.targetCalories != null
+        ? dNow.targetCalories
+        : state.defaultTargetCalories;
+      const consumedNow = dNow.consumedCalories;
+
+      if (targetNow != null && consumedNow != null) {
+        const diffNow = consumedNow - targetNow;
+        const absNow = Math.abs(diffNow);
+        if (diffNow === 0) {
+          calorieSummaryEl.innerHTML = `<strong>Today: on target (0 kcal difference).</strong>`;
+        } else if (diffNow > 0) {
+          calorieSummaryEl.innerHTML = `<strong>Today: surplus of ${absNow} kcal.</strong>`;
+        } else {
+          calorieSummaryEl.innerHTML = `<strong>Today: deficit of ${absNow} kcal.</strong>`;
+        }
+      } else {
+        calorieSummaryEl.innerHTML = `<strong>Today: – (set target & consumed to see deficit).</strong>`;
+      }
+
+      const keys = getRecentDateKeys(currentDate, 27);
+      let totalDiff = 0;
+      let count = 0;
+
+      keys.forEach(key => {
+        const dayData = state.days[key];
+        if (!dayData || !dayData.diet) return;
+        const d = dayData.diet;
+        const target = d.targetCalories != null
+          ? d.targetCalories
+          : state.defaultTargetCalories;
+        const consumed = d.consumedCalories;
+        if (target != null && consumed != null) {
+          totalDiff += (consumed - target);
+          count++;
+        }
+      });
+
+      if (!count) {
+        weightProjectionEl.textContent = "";
+        return;
+      }
+
+      const avgDiff = totalDiff / count;
+      const KCAL_PER_LB = 3500;
+      const weekChange = avgDiff * 7 / KCAL_PER_LB;
+      const monthChange = avgDiff * 30 / KCAL_PER_LB;
+      const quarterChange = avgDiff * 90 / KCAL_PER_LB;
+
+      const p = state.profile || {};
+      const base = p.weightLbs;
+
+      function fmtDelta(delta) {
+        const sign = delta > 0 ? "+" : "";
+        return `${sign}${delta.toFixed(1)} lb`;
+      }
+
+      function fmtWithBase(delta) {
+        if (base == null) return fmtDelta(delta);
+        const newWeight = base + delta;
+        return `${newWeight.toFixed(1)} lb (${fmtDelta(delta)})`;
+      }
+
+      weightProjectionEl.textContent =
+        `If your recent pattern continued: 1 week: ${fmtWithBase(weekChange)} · 1 month: ${fmtWithBase(monthChange)} · 3 months: ${fmtWithBase(quarterChange)}`;
+    }
+
+    exerciseMiniCalEl.addEventListener("click", e => {
+      const cell = e.target.closest(".mini-day");
+      if (!cell || !cell.dataset.date) return;
+      currentDate = parseDateKey(cell.dataset.date);
+      render();
+    });
+    dietMiniCalEl.addEventListener("click", e => {
+      const cell = e.target.closest(".mini-day");
+      if (!cell || !cell.dataset.date) return;
+      currentDate = parseDateKey(cell.dataset.date);
+      render();
+    });
+
+    function toggleGoalForCurrentDay(goalId) {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      const idx = dayData.selectedGoalIds.indexOf(goalId);
+      if (idx >= 0) {
+        dayData.selectedGoalIds.splice(idx, 1);
+        playSound("goalOff");
+      } else {
+        dayData.selectedGoalIds.push(goalId);
+        playSound("goalOn");
+      }
+      saveState();
+      render();
+    }
+
+    function deleteGoal(goalId) {
+      const goalsMap = getGoalsMap();
+      const goal = goalsMap[goalId];
+      const name = goal ? goal.name : "this goal";
+      if (!confirm(`Delete "${name}" and remove it from all days?`)) return;
+
+      const goalTasks = goal ? (goal.todayTasks || []) : [];
+
+      // Remove from list of goals
+      state.goals = state.goals.filter(g => g.id !== goalId);
+
+      // Clean up from all days
+      Object.keys(state.days).forEach(dateKey => {
+        const d = state.days[dateKey];
+        if (d.selectedGoalIds) {
+          const idx = d.selectedGoalIds.indexOf(goalId);
+          if (idx >= 0) d.selectedGoalIds.splice(idx, 1);
+        }
+        if (d.completed) {
+          goalTasks.forEach(t => { delete d.completed[t]; });
+        }
+        if (d.checklistOrder) {
+          d.checklistOrder = d.checklistOrder.filter(t => !goalTasks.includes(t));
+        }
+      });
+
+      saveState();
+      render();
+    }
+
+    function editGoal(goalId) {
+      const goalsMap = getGoalsMap();
+      const goal = goalsMap[goalId];
+      if (!goal) return;
+
+      const newName = prompt("Edit goal name:", goal.name);
+      if (newName === null) return;
+      const trimmedName = newName.trim();
+      if (trimmedName) {
+        goal.name = trimmedName;
+      }
+
+      const currentTasksString = goal.todayTasks.join(", ");
+      const newTasksString = prompt(
+        "Edit tasks (comma-separated):",
+        currentTasksString
+      );
+      if (newTasksString !== null) {
+        const tasks = newTasksString
+          .split(",")
+          .map(t => t.trim())
+          .filter(t => t.length > 0);
+        if (tasks.length > 0) {
+          goal.todayTasks = tasks;
+        }
+      }
+
+      saveState();
+      playSound("newGoal");
+      render();
+    }
+
+    function onGoalDragStart(e) {
+      const goalId = e.currentTarget.dataset.goalId;
+      e.dataTransfer.setData("text/plain", goalId);
+      e.dataTransfer.effectAllowed = "copyMove";
+    }
+
+    tomorrowPlanEl.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      tomorrowPlanEl.classList.add("drag-over");
+    });
+
+    tomorrowPlanEl.addEventListener("dragleave", () => {
+      tomorrowPlanEl.classList.remove("drag-over");
+    });
+
+    tomorrowPlanEl.addEventListener("drop", e => {
+      e.preventDefault();
+      tomorrowPlanEl.classList.remove("drag-over");
+      const goalId = e.dataTransfer.getData("text/plain");
+      if (goalId) {
+        toggleGoalForCurrentDay(goalId);
+      }
+    });
+
+    checklistEl.addEventListener("change", e => {
+      if (e.target && e.target.matches('input[type="checkbox"][data-task]')) {
+        const task = e.target.dataset.task;
+        const checked = e.target.checked;
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        if (!dayData.completed) dayData.completed = {};
+        dayData.completed[task] = checked;
+        saveState();
+        playSound(checked ? "complete" : "uncheck");
+        render();
+      }
+    });
+
+    function editChecklistTask(taskText) {
+      const newText = prompt("Edit task:", taskText);
+      if (newText === null) return;
+      const trimmed = newText.trim();
+      if (!trimmed) return;
+
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+
+      const isGoalTask = state.goals.some(g => g.todayTasks.includes(taskText));
+
+      if (isGoalTask) {
+        alert("This task comes from a goal template. Edit it via the goal bubble (✎) at the top.");
+        return;
+      }
+
+      if (dayData.customTasks) {
+        dayData.customTasks = dayData.customTasks.map(t => t === taskText ? trimmed : t);
+      }
+      if (dayData.carriedTasks) {
+        dayData.carriedTasks = dayData.carriedTasks.map(t => t === taskText ? trimmed : t);
+      }
+      if (state.futureTasks && state.futureTasks[dateKey]) {
+        state.futureTasks[dateKey] = state.futureTasks[dateKey].map(t => t === taskText ? trimmed : t);
+      }
+      if (dayData.completed && taskText in dayData.completed) {
+        dayData.completed[trimmed] = dayData.completed[taskText];
+        delete dayData.completed[taskText];
+      }
+      if (!dayData.checklistOrder) dayData.checklistOrder = [];
+      dayData.checklistOrder = dayData.checklistOrder.map(t => t === taskText ? trimmed : t);
+
+      saveState();
+      render();
+    }
+
+    function deleteChecklistTask(taskText) {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+
+      const confirmDelete = confirm(`Delete task "${taskText}" just for this day?`);
+      if (!confirmDelete) return;
+
+      // Remove from custom / carried / today's scheduled future tasks
+      if (dayData.customTasks) {
+        dayData.customTasks = dayData.customTasks.filter(t => t !== taskText);
+      }
+      if (dayData.carriedTasks) {
+        dayData.carriedTasks = dayData.carriedTasks.filter(t => t !== taskText);
+      }
+      if (state.futureTasks && state.futureTasks[dateKey]) {
+        state.futureTasks[dateKey] = state.futureTasks[dateKey].filter(t => t !== taskText);
+        if (state.futureTasks[dateKey].length === 0) {
+          delete state.futureTasks[dateKey];
+        }
+      }
+
+      // If it’s a goal task or anything else, mark it as removed for this day
+      const isGoalTask = state.goals.some(g => g.todayTasks.includes(taskText));
+      if (!dayData.removedTasks) dayData.removedTasks = [];
+      if (isGoalTask || (!dayData.customTasks.includes(taskText) && !dayData.carriedTasks.includes(taskText))) {
+        if (!dayData.removedTasks.includes(taskText)) {
+          dayData.removedTasks.push(taskText);
+        }
+      }
+
+      // Clean up completion + order
+      if (dayData.completed && taskText in dayData.completed) {
+        delete dayData.completed[taskText];
+      }
+      if (dayData.checklistOrder) {
+        dayData.checklistOrder = dayData.checklistOrder.filter(t => t !== taskText);
+      }
+
+      saveState();
+      render();
+    }
+
+    checklistEl.addEventListener("click", e => {
+      if (e.target && e.target.matches(".schedule-btn[data-task]")) {
+        const task = e.target.dataset.task;
+        const defaultFuture = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate() + 7
+        );
+        const defaultKey = formatDateKey(defaultFuture);
+        const input = prompt(
+          `Schedule "${task}" for which date? (YYYY-MM-DD)`,
+          defaultKey
+        );
+        if (!input) return;
+        const trimmed = input.trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+          alert("Please use the format YYYY-MM-DD.");
+          playSound("error");
+          return;
+        }
+        scheduleTaskForDate(task, trimmed);
+        saveState();
+        render();
+      } else if (e.target && e.target.matches(".checklist-edit-btn[data-task]")) {
+        const task = e.target.dataset.task;
+        editChecklistTask(task);
+      } else if (e.target && e.target.matches(".checklist-delete-btn[data-task]")) {
+        const task = e.target.dataset.task;
+        deleteChecklistTask(task);
+      }
+    });
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll(".checklist-item:not(.dragging)")];
+      let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+      draggableElements.forEach(child => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          closest = { offset, element: child };
+        }
+      });
+      return closest.element;
+    }
+
+    checklistEl.addEventListener("dragover", e => {
+      if (!draggedTaskText) return;
+      e.preventDefault();
+      const afterElement = getDragAfterElement(checklistEl, e.clientY);
+      const draggingEl = [...checklistEl.querySelectorAll(".checklist-item")]
+        .find(el => el.dataset.task === draggedTaskText);
+      if (!draggingEl) return;
+      if (afterElement == null) {
+        checklistEl.appendChild(draggingEl);
+      } else {
+        checklistEl.insertBefore(draggingEl, afterElement);
+      }
+    });
+
+    checklistEl.addEventListener("drop", e => {
+      e.preventDefault();
+      if (!draggedTaskText) return;
+      const newOrder = [...checklistEl.querySelectorAll(".checklist-item")].map(el => el.dataset.task);
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      dayData.checklistOrder = newOrder;
+      draggedTaskText = null;
+      saveState();
+      render();
+    });
+
+    function scheduleTaskForDate(task, dateKey) {
+      if (!state.futureTasks) state.futureTasks = {};
+      if (!state.futureTasks[dateKey]) state.futureTasks[dateKey] = [];
+      if (!state.futureTasks[dateKey].includes(task)) {
+        state.futureTasks[dateKey].push(task);
+      }
+      saveState();
+      playSound("schedule");
+      alert(`Scheduled "${task}" for ${formatHumanDate(parseDateKey(dateKey))}.`);
+    }
+
+    const newGoalForm = document.getElementById("new-goal-form");
+    const newGoalNameInput = document.getElementById("new-goal-name");
+    const newGoalTasksInput = document.getElementById("new-goal-tasks");
+
+    newGoalForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const name = newGoalNameInput.value.trim();
+      const tasksRaw = newGoalTasksInput.value.trim();
+
+      if (!name || !tasksRaw) return;
+
+      const tasks = tasksRaw
+        .split(",")
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
+      if (tasks.length === 0) return;
+
+      const newGoal = {
+        id: "g_" + Date.now(),
+        name,
+        todayTasks: tasks
+      };
+
+      state.goals.push(newGoal);
+      saveState();
+      newGoalNameInput.value = "";
+      newGoalTasksInput.value = "";
+      playSound("newGoal");
+      render();
+    });
+
+    // AI goal generator
+    const aiPromptInput = document.getElementById("ai-goal-prompt");
+    const aiGenerateBtn = document.getElementById("ai-goal-generate-btn");
+
+    if (aiGenerateBtn) {
+      aiGenerateBtn.addEventListener("click", () => {
+        const text = aiPromptInput.value.trim();
+        if (!text) {
+          alert("Describe what Future You wants to do first.");
+          return;
+        }
+        const generated = generateGoalFromPrompt(text);
+        const tasks =
+          generated && generated.todayTasks && generated.todayTasks.length
+            ? generated.todayTasks
+            : [
+                `Clarify what “${text}” means for tomorrow (write 1 sentence)`,
+                "Block dedicated time for it in your calendar",
+                "List 2–3 small prep steps you can do today",
+                "Gather any tools, clothes, or documents you’ll need"
+              ];
+
+        const newGoal = {
+          id: "g_ai_" + Date.now(),
+          // bubble name is exactly what the user typed
+          name: text,
+          todayTasks: tasks
+        };
+        state.goals.push(newGoal);
+
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        if (!dayData.selectedGoalIds.includes(newGoal.id)) {
+          dayData.selectedGoalIds.push(newGoal.id);
+        }
+
+        saveState();
+        aiPromptInput.value = "";
+        render();
+      });
+    }
+
+    const newChecklistForm = document.getElementById("new-checklist-task-form");
+    const newChecklistInput = document.getElementById("new-checklist-task");
+
+    newChecklistForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const text = newChecklistInput.value.trim();
+      if (!text) return;
+
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      if (!dayData.customTasks) dayData.customTasks = [];
+      if (!dayData.customTasks.includes(text)) {
+        dayData.customTasks.push(text);
+      }
+      if (!dayData.checklistOrder.includes(text)) {
+        dayData.checklistOrder.push(text);
+      }
+
+      saveState();
+      newChecklistInput.value = "";
+      playSound("newTask");
+      render();
+    });
+
+    dailyNotesEl.addEventListener("input", e => {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      dayData.notes = e.target.value;
+      autoResizeTextarea(dailyNotesEl);
+      saveState();
+    });
+
+    const prevDayBtn = document.getElementById("prev-day-btn");
+    const nextDayBtn = document.getElementById("next-day-btn");
+
+    prevDayBtn.addEventListener("click", () => {
+      currentDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() - 1
+      );
+      playSound("changeDay");
+      render();
+    });
+
+    nextDayBtn.addEventListener("click", () => {
+      currentDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() + 1
+      );
+      playSound("changeDay");
+      render();
+    });
+
+    const carryForwardBtn = document.getElementById("carry-forward-btn");
+    carryForwardBtn.addEventListener("click", () => {
+      const goalsMap = getGoalsMap();
+      const currentKey = formatDateKey(currentDate);
+      const currentDay = getDayData(currentKey);
+      const tasks = buildTaskList(goalsMap, currentDay);
+      const completedMap = currentDay.completed || {};
+
+      const incompleteTasks = tasks.filter(t => !completedMap[t]);
+
+      if (incompleteTasks.length === 0) {
+        alert("No incomplete tasks to carry forward.");
+        playSound("error");
+        return;
+      }
+
+      const nextDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() + 1
+      );
+      const nextKey = formatDateKey(nextDate);
+      const nextDay = getDayData(nextKey);
+      if (!nextDay.carriedTasks) nextDay.carriedTasks = [];
+
+      incompleteTasks.forEach(task => {
+        if (!nextDay.carriedTasks.includes(task)) {
+          nextDay.carriedTasks.push(task);
+        }
+      });
+
+      saveState();
+      playSound("carryForward");
+      alert(
+        `Carried ${incompleteTasks.length} task(s) forward to ${formatHumanDate(
+          nextDate
+        )}.`
+      );
+    });
+
+    // Theme buttons
+    document.querySelectorAll(".theme-button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.theme = btn.dataset.theme;
+        saveState();
+        applyTheme();
+        playSound("changeTheme");
+      });
+    });
+
+    const saveBtn = document.getElementById("save-state-btn");
+    const loadInput = document.getElementById("load-state-input");
+
+    saveBtn.addEventListener("click", () => {
+      const dataStr = JSON.stringify(state, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const todayKey = formatDateKey(new Date());
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `tomorrow-planner-backup-${todayKey}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    loadInput.addEventListener("change", () => {
+      const file = loadInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed || !parsed.goals || !parsed.days) {
+            alert("This file doesn't look like a valid backup.");
+            playSound("error");
+            return;
+          }
+          state = parsed;
+          if (!state.theme) state.theme = "calm";
+          if (!state.futureTasks) state.futureTasks = {};
+          ensureProfileDefaults();
+          saveState();
+          playSound("changeDay");
+          render();
+        } catch (err) {
+          console.error(err);
+          alert("Could not read backup file.");
+          playSound("error");
+        }
+      };
+      reader.readAsText(file);
+      loadInput.value = "";
+    });
+
+    // Auth
+    const authEmailInput = document.getElementById("auth-email");
+    const authPasswordInput = document.getElementById("auth-password");
+    const authRegisterBtn = document.getElementById("auth-register-btn");
+    const authLoginBtn = document.getElementById("auth-login-btn");
+    const authLogoutBtn = document.getElementById("auth-logout-btn");
+
+    if (authRegisterBtn) {
+      authRegisterBtn.addEventListener("click", async () => {
+        if (!firebaseEnabled || !auth) return alert("Cloud sync is not configured.");
+        const email = authEmailInput.value.trim();
+        const pw = authPasswordInput.value.trim();
+        if (!email || !pw) {
+          alert("Please enter email and password.");
+          return;
+        }
+        try {
+          await auth.createUserWithEmailAndPassword(email, pw);
+          authPasswordInput.value = "";
+        } catch (e) {
+          console.error(e);
+          alert(e.message || "Registration failed.");
+        }
+      });
+    }
+
+    if (authLoginBtn) {
+      authLoginBtn.addEventListener("click", async () => {
+        if (!firebaseEnabled || !auth) return alert("Cloud sync is not configured.");
+        const email = authEmailInput.value.trim();
+        const pw = authPasswordInput.value.trim();
+        if (!email || !pw) {
+          alert("Please enter email and password.");
+          return;
+        }
+        try {
+          await auth.signInWithEmailAndPassword(email, pw);
+          authPasswordInput.value = "";
+        } catch (e) {
+          console.error(e);
+          alert(e.message || "Login failed.");
+        }
+      });
+    }
+
+    if (authLogoutBtn) {
+      authLogoutBtn.addEventListener("click", async () => {
+        if (!firebaseEnabled || !auth) return;
+        try {
+          await auth.signOut();
+        } catch (e) {
+          console.error(e);
+          alert("Could not log out.");
+        }
+      });
+    }
+
+    // Exercise / diet listeners
+    if (exerciseNotesEl) {
+      exerciseNotesEl.addEventListener("input", () => {
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.exercise.type = exerciseNotesEl.value;
+        autoResizeTextarea(exerciseNotesEl);
+        saveState();
+      });
+    }
+
+    if (exerciseRatingEl) {
+      exerciseRatingEl.addEventListener("input", () => {
+        const val = parseInt(exerciseRatingEl.value, 10);
+        exerciseRatingValueEl.textContent = isNaN(val) ? "-" : val;
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.exercise.rating = isNaN(val) ? null : val;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (dietTargetEl) {
+      dietTargetEl.addEventListener("input", () => {
+        const val = parseInt(dietTargetEl.value, 10);
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.diet.targetCalories = isNaN(val) ? null : val;
+        if (!isNaN(val)) {
+          state.defaultTargetCalories = val;
+        }
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (dietConsumedEl) {
+      dietConsumedEl.addEventListener("input", () => {
+        const val = parseInt(dietConsumedEl.value, 10);
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.diet.consumedCalories = isNaN(val) ? null : val;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (dietRatingEl) {
+      dietRatingEl.addEventListener("input", () => {
+        const val = parseInt(dietRatingEl.value, 10);
+        dietRatingValueEl.textContent = isNaN(val) ? "-" : val;
+        const dateKey = formatDateKey(currentDate);
+        const dayData = getDayData(dateKey);
+        dayData.diet.rating = isNaN(val) ? null : val;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (profileWeightEl) {
+      profileWeightEl.addEventListener("input", () => {
+        const v = parseFloat(profileWeightEl.value);
+        state.profile.weightLbs = isNaN(v) ? null : v;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (profileHeightEl) {
+      profileHeightEl.addEventListener("input", () => {
+        const v = parseFloat(profileHeightEl.value);
+        state.profile.heightIn = isNaN(v) ? null : v;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (profileAgeEl) {
+      profileAgeEl.addEventListener("input", () => {
+        const v = parseInt(profileAgeEl.value, 10);
+        state.profile.age = isNaN(v) ? null : v;
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    if (profileSexEl) {
+      profileSexEl.addEventListener("change", () => {
+        state.profile.sex = profileSexEl.value || "";
+        saveState();
+        renderHealthSection();
+      });
+    }
+
+    // Print summary
+    function buildPrintSummary() {
+      const dateKey = formatDateKey(currentDate);
+      const dayData = getDayData(dateKey);
+      const goalsMap = getGoalsMap();
+      const tasks = buildTaskList(goalsMap, dayData);
+      const completedMap = dayData.completed || {};
+
+      let html = `<h1>Day summary – ${formatHumanDate(currentDate)}</h1>`;
+
+      const selectedGoals = dayData.selectedGoalIds
+        .map(id => goalsMap[id])
+        .filter(Boolean);
+      if (selectedGoals.length > 0) {
+        html += "<h2>Tomorrow’s plan</h2><ul>";
+        selectedGoals.forEach(g => {
+          html += `<li>${escapeHtml(g.name)}</li>`;
+        });
+        html += "</ul>";
+      }
+
+      if (tasks.length > 0) {
+        html += "<h2>Checklist</h2><ul>";
+        tasks.forEach(t => {
+          const mark = completedMap[t] ? "☑" : "☐";
+          html += `<li>${mark} ${escapeHtml(t)}</li>`;
+        });
+        html += "</ul>";
+      }
+
+      if (dayData.notes && dayData.notes.trim().length > 0) {
+        html += "<h2>Daily notes</h2>";
+        html += `<pre>${escapeHtml(dayData.notes)}</pre>`;
+      }
+
+      const ex = dayData.exercise || {};
+      const di = dayData.diet || {};
+      const hasExercise = (ex.type && ex.type.trim()) || ex.rating != null;
+      const hasDiet = di.targetCalories != null || di.consumedCalories != null || di.rating != null;
+
+      if (hasExercise || hasDiet) {
+        html += "<h2>Health</h2>";
+        if (hasExercise) {
+          html += "<h3>Exercise</h3><ul>";
+          if (ex.type && ex.type.trim()) {
+            html += `<li>Details: ${escapeHtml(ex.type)}</li>`;
+          }
+          if (ex.rating != null) {
+            html += `<li>Rating: ${ex.rating}/10 (${escapeHtml(getActivityLabelForRating(ex.rating))})</li>`;
+          }
+          html += "</ul>";
+        }
+        if (hasDiet) {
+          html += "<h3>Diet & calories</h3><ul>";
+          if (di.targetCalories != null) html += `<li>Target: ${di.targetCalories} kcal</li>`;
+          if (di.consumedCalories != null) html += `<li>Consumed: ${di.consumedCalories} kcal</li>`;
+          if (di.targetCalories != null && di.consumedCalories != null) {
+            const diff = di.consumedCalories - di.targetCalories;
+            const absDiff = Math.abs(diff);
+            if (diff === 0) {
+              html += "<li>Today: on target.</li>";
+            } else if (diff > 0) {
+              html += `<li>Surplus: ${absDiff} kcal</li>`;
+            } else {
+              html += `<li>Deficit: ${absDiff} kcal</li>`;
+            }
+          }
+          if (di.rating != null) {
+            html += `<li>Day rating: ${di.rating}/10 (${escapeHtml(getDietLabelForRating(di.rating))})</li>`;
+          }
+          html += "</ul>";
+        }
+      }
+
+      if (state.futureTasks && state.futureTasks[dateKey] && state.futureTasks[dateKey].length > 0) {
+        html += "<h2>Scheduled for this date</h2><ul>";
+        state.futureTasks[dateKey].forEach(t => {
+          html += `<li>${escapeHtml(t)}</li>`;
+        });
+        html += "</ul>";
+      }
+
+      printSummaryEl.innerHTML = html;
+    }
+
+    if (printSummaryBtn) {
+      printSummaryBtn.addEventListener("click", () => {
+        buildPrintSummary();
+        document.body.classList.add("print-mode");
+        window.print();
+      });
+    }
+
+    window.addEventListener("afterprint", () => {
+      document.body.classList.remove("print-mode");
+      printSummaryEl.innerHTML = "";
+    });
+
+    // Tabs
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
+        tabButtons.forEach(b => b.classList.toggle("active", b === btn));
+        tabContents.forEach(c => c.classList.toggle("active", c.dataset.tab === tab));
+      });
+    });
+
+    // Zen mode
+    const zenToggleBtn = document.getElementById("zen-toggle-btn");
+    if (zenToggleBtn) {
+      zenToggleBtn.addEventListener("click", () => {
+        document.body.classList.toggle("focus-mode");
+        const active = document.body.classList.contains("focus-mode");
+        zenToggleBtn.classList.toggle("active", active);
+      });
+    }
+
+    // ---------- Init ----------
+    loadStateLocal();
+    ensureProfileDefaults();
+    smartCarryForwardIfNewDay();
+    applyTheme();
+    render();
+    setupFirebase();
+    updateAuthUI();
+  </script>
+</body>
+</html>
