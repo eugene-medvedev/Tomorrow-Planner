@@ -1,0 +1,88 @@
+* {
+  box-sizing: border-box;
+}
+
+/* ========= THEME VARIABLES & BASE STYLES (UNCHANGED) ========= */
+/* ... (existing theme variables and base styles) ... */
+
+/* ========= NEW STYLES (Added for Tasks 2, 3, 5) ========= */
+
+/* Task 2: Future Tasks Bubbles */
+.upcoming-group-compact {
+  margin-bottom: 0.5rem;
+}
+.upcoming-date {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+.future-bubble {
+  /* Mimic goal-bubble but for individual tasks */
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  border-radius: 99px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: all 0.2s;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+.future-bubble:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.future-delete-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1; /* Fix alignment */
+}
+.future-delete-btn:hover {
+  color: var(--primary);
+}
+
+/* Task 5: Health Tables */
+.deficit-table, .loss-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+.deficit-table tr:nth-child(even), .loss-table tr:nth-child(even) {
+  background: rgba(0,0,0,0.02);
+}
+.deficit-table td, .loss-table td {
+  padding: 0.25rem 0.5rem;
+}
+.deficit-table td:first-child, .loss-table td:first-child {
+  text-align: left;
+}
+.deficit-table td:last-child, .loss-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+}
+/* Ensure exercise-inputs and rating-label accommodate new fields */
+.exercise-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.exercise-inputs label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.exercise-inputs label input {
+  width: 80px;
+}
+/* ... (rest of the original file remains the same) ... */

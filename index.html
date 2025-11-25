@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tomorrow Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="page-bubble">
+    <div class="app-shell">
+      <header>
+        <div class="header-left">
+          <h1>Tomorrow Planner</h1>
+        </div>
+        <div class="header-right">
+          <div class="date-display" id="header-date"></div>
+          <div class="header-actions">
+            <button type="button" id="zen-toggle-btn" class="zen-btn">🧘 Zen</button>
+            <button type="button" id="print-summary-btn" class="print-btn">🖨 Print</button>
+            <button type="button" id="auth-modal-btn" class="auth-btn">👤 Sync</button>
+          </div>
+        </div>
+      </header>
+      
+      <div id="auth-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+          <button type="button" class="modal-close" id="auth-modal-close">✕</button>
+          <h2>Cloud Sync</h2>
+          <div class="hint-text" id="auth-hint">
+            Log in to sync your planner across devices.
+          </div>
+          
+          <div id="auth-logged-out" class="auth-form-container">
+            <input type="email" id="auth-email" placeholder="Email address" />
+            <input type="password" id="auth-password" placeholder="Password" />
+            <div class="auth-buttons">
+              <button type="button" id="auth-login-btn" class="primary-btn">Log in</button>
+              <button type="button" id="auth-register-btn" class="secondary-btn">Create account</button>
+            </div>
+          </div>
+
+          <div id="auth-logged-in" style="display:none;" class="auth-profile-container">
+            <div class="avatar-circle" id="auth-avatar">👤</div>
+            <span class="auth-status" id="auth-user-label"></span>
+            <button type="button" id="auth-logout-btn" class="secondary-btn">Log out</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-top">
+        <div class="goals-row-wrapper">
+          <div class="goals-row-header">
+            <h2>🎯 Pick what Future You wants to do</h2>
+            <span class="column-subtitle">Click to add to plan</span>
+          </div>
+          <div class="goals-row" id="goals-row"></div>
+
+          <div class="goals-actions-row">
+            <form class="new-goal-form" id="new-goal-form">
+              <input type="text" id="new-goal-name" placeholder="New goal name" required />
+              <input type="text" id="new-goal-tasks" placeholder="Tasks (comma separated)" required />
+              <button type="submit">Add</button>
+            </form>
+            
+            <div class="ai-goal-section">
+               <div class="ai-input-group">
+                 <input type="text" id="ai-goal-prompt" placeholder="AI Helper: Describe goal (e.g. 'Leg day')" />
+                 <button type="button" id="ai-goal-generate-btn">✨ Magic</button> </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-columns">
+        <div class="card card-plan">
+          <div class="column-header">
+            <div>
+              <h2>🌅 Tomorrow’s Plan</h2>
+              <div class="column-subtitle">Commitments for the next day</div>
+            </div>
+          </div>
+          <div id="tomorrow-plan" class="droptarget"></div>
+          <div class="hint-text">Drag or click bubbles above to fill this.</div>
+        </div>
+
+        <div class="card card-checklist" id="checklist-card"> 
+          <div class="column-header">
+            <div>
+              <h2>✅ Today’s Checklist</h2>
+              <div class="column-subtitle">Prerequisites & Daily Tasks</div>
+            </div>
+          </div>
+
+          <div class="completion-row">
+            <div class="completion-label"><strong id="completion-perc">0%</strong></div>
+            <div class="completion-bar">
+              <div class="completion-bar-fill" id="completion-bar-fill"></div>
+            </div>
+          </div>
+
+          <div id="checklist"></div>
+
+          <form class="add-task-inline" id="add-task-inline-form">
+            <input type="text" id="add-task-inline" placeholder="Add a custom task for today" required />
+            <button type="submit">+</button>
+          </form>
+        </div>
+      </div>
+
+      <footer>
+        <div class="footer-tabs">
+          <div class="tab-buttons">
+            <button type="button" class="tab-btn" data-tab="main" id="main-tab-btn">Planner</button>
+            <button type="button" class="tab-btn active" data-tab="health" id="health-tab-btn">Health</button> <button type="button" class="tab-btn" data-tab="theme" id="theme-tab-btn">Settings</button>
+          </div>
+          
+          <div class="tab-content" data-tab="main"> <div class="card card-footer-nav">
+              <div class="day-split-view">
+                <div class="day-nav-header" style="justify-content: center;">
+                  <h3 id="current-day-label">Today</h3> 
+                </div>
+                <button type="button" id="carry-over-btn" class="primary-btn">🔁 Carry Over Unfinished Tasks</button> 
+              </div>
+              
+              <div class="mini-cal-widget">
+                <h3 class="card-section-title">🗓 Calendar</h3>
+                <div class="mini-cal-header">
+                  <span id="main-cal-month-label" class="cal-month-title"></span>
+                  <div class="mini-cal-nav">
+                    <button type="button" id="main-cal-prev">◀</button>
+                    <button type="button" id="main-cal-next">▶</button>
+                  </div>
+                </div>
+                <div class="calendar-days-header">
+                  <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+                </div>
+                <div class="mini-calendar-grid" id="main-calendar-grid"></div>
+                <div class="hint-text" style="text-align:center; margin-top:8px;">
+                  🟣 = Future task scheduled
+                </div>
+                <h3 class="card-section-title" style="margin-top:1rem;">🗓 Upcoming Tasks</h3>
+                <div id="upcoming-list" class="upcoming-list-compact"></div> <div class="hint-text" style="text-align:center;">
+                    (Click or drag a task above to add it to today)
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-footer-notes">
+              <h3 class="card-section-title">📝 Daily Notes & Photo</h3>
+              <textarea id="daily-notes" placeholder="Jot down notes, workout logs, or thoughts..."></textarea>
+              <div class="image-upload-section">
+                <div class="image-preview-container" id="image-preview-container" style="display:none;">
+                  <img id="day-image-preview" src="" alt="Day progress" />
+                  <button type="button" id="remove-image-btn">✕</button>
+                </div>
+                <label for="day-image-input" class="image-upload-label">
+                  📷 Upload Progress Photo
+                  <input type="file" id="day-image-input" accept="image/*" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-content active" data-tab="health"> <div class="card card-footer-health">
+              
+              <div class="profile-summary-row">
+                <span>BMR (Estimated): <strong id="profile-bmr-display">N/A</strong></span>
+              </div>
+
+              <div class="day-split-view" style="gap: 1rem;">
+                
+                <div class="health-section">
+                  <h3 class="card-section-title">🏃‍♀️ Exercise Log</h3>
+                  <p class="hint-text">Your estimated calories burned by exercise will be calculated based on intensity.</p>
+                  
+                  <div class="exercise-inputs">
+                    <label>Duration (mins): <input type="number" id="exercise-duration-minutes" min="1" value="60" /></label>
+                    <div class="rating-label">
+                      <span>Intensity (1=Light, 10=Intense): <strong id="exercise-intensity-label">0</strong></span>
+                      <input type="range" id="exercise-intensity" min="0" max="10" value="0" />
+                    </div>
+                    <p class="hint-text">Est. Calories Burned: <strong id="exercise-cals-burned">0</strong> kcal</p>
+                  </div>
+
+                  <div class="day-split-view" style="margin-top: 1rem; align-items:flex-start;">
+                    <div class="mini-cal-widget">
+                      <h3 class="card-section-title">Exercise Calendar</h3>
+                      <div class="mini-cal-header">
+                        <span id="health-cal-month-label" class="cal-month-title"></span>
+                        <div class="mini-cal-nav">
+                          <button type="button" id="health-cal-prev">◀</button>
+                          <button type="button" id="health-cal-next">▶</button>
+                        </div>
+                      </div>
+                      <div class="calendar-days-header">
+                        <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+                      </div>
+                      <div class="mini-calendar-grid" id="exercise-mini-calendar"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="health-section">
+                  <h3 class="card-section-title">🍽 Diet Log</h3>
+                  <div class="diet-inputs">
+                    <input type="number" id="consumed-calories" placeholder="Consumed Calories (kcal)" min="0" />
+                  </div>
+                  
+                  <div class="rating-label" style="margin-top:0.75rem;">
+                    <span>Diet Rating (How did you do? 1=Bad, 10=Great): <strong id="diet-rating-label">5</strong></span>
+                    <input type="range" id="diet-rating-slide" min="1" max="10" value="5" />
+                  </div>
+
+                  <div class="day-split-view" style="margin-top: 1rem; align-items:flex-start;">
+                    <div class="mini-cal-widget">
+                      <h3 class="card-section-title">Diet Calendar</h3>
+                      <div class="mini-cal-header">
+                        </div>
+                      <div class="calendar-days-header">
+                        <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+                      </div>
+                      <div class="mini-calendar-grid" id="diet-mini-calendar"></div>
+                    </div>
+                  </div>
+
+                  <h3 class="card-section-title" style="margin-top:1rem;">🔥 Estimated Calorie Deficit</h3>
+                  <table class="deficit-table">
+                    <tr><td>BMR (Maintenance)</td><td id="health-bmr-value">0</td></tr>
+                    <tr><td>+ Exercise Calories Burned</td><td id="health-exercise-value">0</td></tr>
+                    <tr><td>- Consumed Calories</td><td id="health-consumed-value">0</td></tr>
+                    <tr style="font-weight: bold; border-top: 1px solid var(--border-strong);">
+                      <td>Deficit/Surplus (kcal)</td><td id="health-deficit-value">0</td>
+                    </tr>
+                  </table>
+                  
+                  <h3 class="card-section-title" style="margin-top:1rem;">⚖️ Estimated Weight Loss (lbs)</h3>
+                  <table class="loss-table">
+                    <tr><td>1 Day</td><td id="loss-1-day">0.00</td></tr>
+                    <tr><td>1 Week</td><td id="loss-1-week">0.00</td></tr>
+                    <tr><td>1 Month (30 days)</td><td id="loss-1-month">0.00</td></tr>
+                    <tr><td>3 Months (90 days)</td><td id="loss-3-months">0.00</td></tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="tab-content" data-tab="theme">
+            <div class="card card-footer-theme">
+              <h3 class="card-section-title">Theme</h3>
+              <div class="theme-buttons">
+              </div>
+
+              <div class="save-controls">
+                <h3 class="card-section-title" style="margin-top:1rem;">Backup</h3>
+                <button type="button" id="save-state-btn">Save to File</button>
+                <label for="load-state-input" class="file-load-btn">
+                  Load File
+                  <input type="file" id="load-state-input" accept="application/json" />
+                </label>
+              </div>
+              
+              <div class="profile-fields-settings">
+                 <h3 class="card-section-title" style="margin-top:1rem;">Biometrics</h3>
+                 <div class="profile-row">
+                    <input type="number" id="profile-weight" placeholder="Weight (lbs)"> 
+                    <input type="number" id="profile-height" placeholder="Height (in)">
+                    <input type="number" id="profile-age" placeholder="Age">
+                    <select id="profile-sex">
+                      <option value="">Sex</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <div class="print-summary" id="print-summary"></div>
+  
+  <script src="script.js"></script>
+</body>
+</html>
