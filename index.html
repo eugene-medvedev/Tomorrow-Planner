@@ -19,11 +19,11 @@
         // Firebase Console > Project Settings > Your apps > SDK setup and configuration
         const firebaseConfig = {
              apiKey: "AIzaSyApYUr6J_71x1lSf07Dl5SVMsXzEXuagC8",
-  authDomain: "tomorrow-planner1.firebaseapp.com",
-  projectId: "tomorrow-planner1",
-  storageBucket: "tomorrow-planner1.firebasestorage.app",
-  messagingSenderId: "966584278328",
-  appId: "1:966584278328:web:a98f950c740eb72c7675cd"
+             authDomain: "tomorrow-planner1.firebaseapp.com",
+             projectId: "tomorrow-planner1",
+             storageBucket: "tomorrow-planner1.firebasestorage.app",
+             messagingSenderId: "966584278328",
+             appId: "1:966584278328:web:a98f950c740eb72c7675cd"
         };
 
         // Initialize Firebase
@@ -132,16 +132,16 @@
 
         /* ========= Layout ========= */
         .page-bubble {
-    max-width: 900px;          /* pick the max width you like (800, 900, etc.) */
-    width: 100%;               /* keeps it at that max on big screens */
-    margin: 1.5rem auto;
-    padding: 1.5rem;
-    background: var(--page-bg);
-    border-radius: 32px;
-    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
-    border: 1px solid var(--border-strong);
-    backdrop-filter: blur(20px);
-}
+            max-width: 900px;          /* pick the max width you like (800, 900, etc.) */
+            width: 100%;               /* keeps it at that max on big screens */
+            margin: 1.5rem auto;
+            padding: 1.5rem;
+            background: var(--page-bg);
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+            border: 1px solid var(--border-strong);
+            backdrop-filter: blur(20px);
+        }
 
         .app-shell {
             max-width: 100%;
@@ -1635,6 +1635,7 @@
     let currentUser = null;
     let firebaseEnabled = false;
     let db = null, auth = null;
+    let saveTimeout = null; // Debounce handle
 
     // ---------- Persistence ----------
     const STORAGE_KEY = "planner_v12";
@@ -1652,11 +1653,43 @@
         }
     }
 
+    // Debounced save for high-frequency inputs (text areas)
+    function saveStateDebounced() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            saveState();
+        }, 1000); // Wait 1 second after typing stops
+    }
+
     function saveState() {
+        // 1. Always save fast to local storage
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        
+        // 2. Cloud Sync Logic
         if (firebaseEnabled && currentUser && db) {
+            // Show syncing UI
+            const authBtn = document.getElementById("auth-modal-btn");
+            const originalText = authBtn.innerHTML;
+            if (authBtn) authBtn.innerHTML = "☁️ Syncing...";
+
             db.collection("users").doc(currentUser.uid).set({ state }, { merge: true })
-                .catch(err => console.error("Cloud sync save error:", err));
+                .then(() => {
+                    console.log("Cloud sync successful");
+                    if (authBtn) {
+                        authBtn.innerHTML = "☁️ Synced";
+                        // Reset text after 2 seconds unless hovering
+                        setTimeout(() => { if(authBtn.innerHTML === "☁️ Synced") authBtn.innerHTML = "☁️ Synced"; }, 2000);
+                    }
+                })
+                .catch(err => {
+                    console.error("Cloud sync save error:", err);
+                    if (authBtn) authBtn.innerHTML = "⚠️ Error";
+                    
+                    if (err.code === 'permission-denied') showNotification("Sync failed: Permission denied.");
+                    else if (err.code === 'resource-exhausted') showNotification("Sync failed: Quota exceeded.");
+                    else if (err.message && err.message.includes("exceeds the maximum allowed size")) showNotification("Sync failed: Data too large. Try removing old images.");
+                    else showNotification("Cloud sync failed. Working offline.");
+                });
         }
     }
 
@@ -1969,8 +2002,11 @@
     }
 
     function renderNotesAndImage(dayData) {
-        dom.notes.value = dayData.notes || "";
-        autoResizeTextarea(dom.notes);
+        // Prevent cursor jumping if user is typing
+        if (document.activeElement !== dom.notes) {
+            dom.notes.value = dayData.notes || "";
+            autoResizeTextarea(dom.notes);
+        }
 
         if (dayData.image) {
             dom.imageContainer.style.display = "block";
@@ -2018,7 +2054,7 @@
         if(exNotesEl) {
              exNotesEl.oninput = (e) => {
                  dayData.exercise.type = e.target.value;
-                 saveState();
+                 saveStateDebounced(); // Updated to debounce
              };
         }
 
@@ -2039,7 +2075,7 @@
                 }
                 
                 if (intensityLabelEl) intensityLabelEl.textContent = dayData.exercise.intensity;
-                saveState();
+                saveStateDebounced();
                 renderHealth(dayData);
                 renderCalendar(dom.exCalGrid, healthCalCursor, "exercise");
                 renderCalendar(dom.dietCalGrid, healthCalCursor, "diet"); // diet color depends on exercise
@@ -2072,7 +2108,8 @@
                 // Sync display
                 if(dietLabelEl) dietLabelEl.textContent = val;
                 if(consumedEl) consumedEl.value = val;
-                saveState();
+                saveStateDebounced(); // Debounce slider
+                
                 // We re-render to update calcs, but maybe throttle in real app.
                 // Here we just update DOM elements that depend on it
                 renderCalendar(dom.dietCalGrid, healthCalCursor, "diet");
@@ -2539,6 +2576,16 @@
         }
     };
 
+    // Attach Notes Listener (CRITICAL FIX: This was missing in previous version)
+    const notesInput = document.getElementById("daily-notes");
+    if (notesInput) {
+        notesInput.addEventListener("input", (e) => {
+            const d = getDayData(formatDateKey(currentDate));
+            d.notes = e.target.value;
+            saveStateDebounced();
+        });
+    }
+
     document.getElementById("day-image-input").onchange = (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -2549,12 +2596,14 @@
             img.onload = () => {
                 const canvas = document.createElement("canvas");
                 let width = img.width; let height = img.height;
-                const MAX_WIDTH = 600;
+                // OPTIMIZED: Smaller max width and quality to fit Firestore 1MB limit
+                const MAX_WIDTH = 500;
                 if(width > MAX_WIDTH) { height *= MAX_WIDTH/width; width = MAX_WIDTH; }
                 canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(img, 0, 0, width, height);
-                const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                // Reduced quality to 0.6 for better compression
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
 
                 const d = getDayData(formatDateKey(currentDate));
                 d.image = dataUrl;
@@ -2605,7 +2654,7 @@
             loggedInView.style.display = "flex";
             userLabel.textContent = currentUser.email;
             authHint.textContent = "Your planner syncs automatically across devices.";
-            authBtn.innerHTML = "☁️ Synced";
+            if (authBtn.innerHTML !== "☁️ Syncing...") authBtn.innerHTML = "☁️ Synced";
         } else {
             loggedOutView.style.display = "flex";
             loggedInView.style.display = "none";
