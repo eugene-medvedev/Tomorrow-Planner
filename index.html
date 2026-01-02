@@ -865,6 +865,142 @@
             position: relative;
         }
 
+        /* EMOM Timer */
+        .emom-card {
+            margin-top: 1rem;
+            background: linear-gradient(135deg, rgba(79,70,229,0.12), rgba(79,70,229,0.05));
+            border-color: rgba(79,70,229,0.3);
+        }
+        .emom-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .emom-subtitle {
+            margin: 0.15rem 0 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .emom-pill {
+            background: white;
+            border: 1px solid var(--border-strong);
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--primary);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.08);
+        }
+        .emom-controls {
+            margin-top: 0.75rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+        .emom-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            padding: 0.75rem;
+        }
+        .emom-field label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .emom-field input {
+            width: 100%;
+            padding: 0.55rem 0.7rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-strong);
+            font-weight: 700;
+        }
+        .emom-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .emom-display {
+            margin-top: 1rem;
+            background: white;
+            border: 1px solid var(--card-health-border);
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+        }
+        .emom-time {
+            font-size: 2.4rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .emom-subtime {
+            margin-top: 0.25rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .emom-progress {
+            margin-top: 0.75rem;
+            height: 12px;
+            background: var(--chip-bg);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid var(--border-strong);
+        }
+        .emom-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #7c3aed);
+            width: 0%;
+            transition: width 0.2s linear;
+        }
+        .emom-actions {
+            margin-top: 0.9rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .emom-btn {
+            flex: 1;
+            min-width: 120px;
+            border-radius: 12px;
+            border: none;
+            padding: 0.75rem 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            background: var(--primary);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.25);
+        }
+        .emom-btn:hover { filter: brightness(1.05); }
+        .emom-btn.secondary {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border-strong);
+            box-shadow: none;
+        }
+        .emom-alert {
+            margin-top: 0.4rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .emom-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: inline-block;
+            box-shadow: 0 0 0 6px rgba(79,70,229,0.12);
+        }
+
         /* Schedule Modal */
         #schedule-modal {
             display: none; position: fixed; z-index: 2000;
@@ -1334,6 +1470,45 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="card card-health emom-card">
+                        <div class="emom-header">
+                            <div>
+                                <h3 class="card-section-title">⏱️ EMOM Timer</h3>
+                                <p class="emom-subtitle">Every minute on the minute with a soft cue before each set.</p>
+                            </div>
+                            <div class="emom-pill">Default 20:00 • 1:00 sets</div>
+                        </div>
+
+                        <div class="emom-controls">
+                            <div class="emom-field">
+                                <label for="emom-total">Total duration (minutes)</label>
+                                <input type="number" id="emom-total" min="1" max="180" value="20" />
+                            </div>
+                            <div class="emom-field">
+                                <label for="emom-interval">Set length (seconds)</label>
+                                <input type="number" id="emom-interval" min="15" max="600" step="5" value="60" />
+                            </div>
+                            <div class="emom-meta">
+                                <span><span class="emom-dot"></span> <strong id="emom-round-count">20 rounds</strong></span>
+                                <span id="emom-next-cue">Next minute cue at 00:60</span>
+                            </div>
+                        </div>
+
+                        <div class="emom-display">
+                            <div class="emom-time" id="emom-clock">20:00</div>
+                            <div class="emom-subtime">Current set: <strong id="emom-set-remaining">60s</strong></div>
+                            <div class="emom-progress">
+                                <div class="emom-progress-bar" id="emom-progress-bar"></div>
+                            </div>
+                        </div>
+
+                        <div class="emom-actions">
+                            <button type="button" class="emom-btn" id="emom-start">▶️ Start</button>
+                            <button type="button" class="emom-btn secondary" id="emom-reset">Reset</button>
+                        </div>
+                        <div class="emom-alert" id="emom-status"><span class="emom-dot"></span> Waiting to start…</div>
                     </div>
                 </div>
 
@@ -2864,7 +3039,7 @@
             renderHealth(getDayData(formatDateKey(currentDate)));
         };
     }
-    
+
     // NEW: Sex toggle listener
     document.querySelectorAll('.sex-toggle input[name="sex"]').forEach(radio => {
         radio.onchange = (e) => {
@@ -2875,6 +3050,187 @@
             }
         };
     });
+
+    // ---------- EMOM Timer ----------
+    const emomTotalInput = document.getElementById("emom-total");
+    const emomIntervalInput = document.getElementById("emom-interval");
+    const emomRoundCount = document.getElementById("emom-round-count");
+    const emomNextCue = document.getElementById("emom-next-cue");
+    const emomClock = document.getElementById("emom-clock");
+    const emomSetRemaining = document.getElementById("emom-set-remaining");
+    const emomProgressBar = document.getElementById("emom-progress-bar");
+    const emomStartBtn = document.getElementById("emom-start");
+    const emomResetBtn = document.getElementById("emom-reset");
+    const emomStatus = document.getElementById("emom-status");
+
+    if (emomTotalInput && emomIntervalInput && emomStartBtn && emomResetBtn) {
+        let emomAudioCtx = null;
+        const emomState = {
+            totalMinutes: Number(emomTotalInput.value) || 20,
+            intervalSeconds: Number(emomIntervalInput.value) || 60,
+            elapsedMs: 0,
+            running: false,
+            startTimestamp: null,
+            timerId: null,
+            lastCueSecond: null,
+            lastRound: 1
+        };
+
+        const formatSeconds = (seconds) => {
+            const safe = Math.max(0, Math.ceil(seconds));
+            const m = String(Math.floor(safe / 60)).padStart(2, "0");
+            const s = String(safe % 60).padStart(2, "0");
+            return `${m}:${s}`;
+        };
+
+        const playBeep = (frequency = 880, duration = 0.15) => {
+            if (!emomAudioCtx) {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                emomAudioCtx = new Ctx();
+            }
+            const ctx = emomAudioCtx;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = frequency;
+            osc.type = "sine";
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            const now = ctx.currentTime;
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.start(now);
+            osc.stop(now + duration);
+        };
+
+        const totalMs = () => emomState.totalMinutes * 60 * 1000;
+        const intervalMs = () => emomState.intervalSeconds * 1000;
+
+        const updateMeta = () => {
+            const rounds = Math.max(1, Math.floor((emomState.totalMinutes * 60) / emomState.intervalSeconds));
+            if (emomRoundCount) emomRoundCount.textContent = `${rounds} rounds`;
+            if (emomNextCue) emomNextCue.textContent = `Next minute cue at 00:${String(Math.min(99, Math.round(emomState.intervalSeconds))).padStart(2, "0")}`;
+            if (emomSetRemaining) emomSetRemaining.textContent = `${Math.round(emomState.intervalSeconds)}s`;
+        };
+
+        const setStatus = (text) => {
+            if (emomStatus) emomStatus.innerHTML = `<span class="emom-dot"></span> ${text}`;
+        };
+
+        const stopTicker = () => {
+            if (emomState.timerId) {
+                clearInterval(emomState.timerId);
+                emomState.timerId = null;
+            }
+        };
+
+        const getElapsed = () => {
+            if (!emomState.running || !emomState.startTimestamp) return emomState.elapsedMs;
+            return emomState.elapsedMs + (performance.now() - emomState.startTimestamp);
+        };
+
+        const updateDisplay = (withCues = false) => {
+            const total = Math.max(totalMs(), 1000);
+            const interval = Math.max(intervalMs(), 1000);
+            const elapsed = Math.min(getElapsed(), total);
+            const remaining = Math.max(total - elapsed, 0);
+            const rounds = Math.max(1, Math.ceil(total / interval));
+            const currentRound = Math.min(Math.floor(elapsed / interval) + 1, rounds);
+            const intervalRemaining = interval - (elapsed % interval);
+
+            if (emomClock) emomClock.textContent = formatSeconds(remaining / 1000);
+            if (emomSetRemaining) emomSetRemaining.textContent = `${Math.max(0, Math.ceil(intervalRemaining / 1000))}s`;
+            if (emomProgressBar) emomProgressBar.style.width = `${(elapsed / total) * 100}%`;
+            if (emomRoundCount) emomRoundCount.textContent = `${rounds} rounds • On round ${currentRound}`;
+
+            if (withCues && emomState.running) {
+                if (currentRound !== emomState.lastRound) {
+                    playBeep(880, 0.12);
+                    emomState.lastRound = currentRound;
+                    emomState.lastCueSecond = null;
+                }
+
+                const cueSecond = Math.ceil(intervalRemaining / 1000);
+                if (cueSecond <= 5 && cueSecond !== emomState.lastCueSecond && remaining > 0) {
+                    playBeep(540, 0.1);
+                    emomState.lastCueSecond = cueSecond;
+                }
+            }
+
+            if (remaining <= 0 && emomState.running) {
+                stopTicker();
+                emomState.running = false;
+                emomState.elapsedMs = total;
+                emomState.startTimestamp = null;
+                emomStartBtn.textContent = "▶️ Start";
+                setStatus("Finished! Nice work.");
+                playBeep(960, 0.18);
+                setTimeout(() => playBeep(720, 0.18), 160);
+            }
+        };
+
+        const startTimer = () => {
+            if (emomState.running) return;
+            emomState.running = true;
+            emomState.startTimestamp = performance.now();
+            emomState.lastCueSecond = null;
+            emomStartBtn.textContent = "⏸ Pause";
+            setStatus("Running – cues at 5s before each minute.");
+            stopTicker();
+            emomState.timerId = setInterval(() => updateDisplay(true), 200);
+            updateDisplay();
+        };
+
+        const pauseTimer = () => {
+            if (!emomState.running) return;
+            emomState.elapsedMs = Math.min(getElapsed(), totalMs());
+            emomState.running = false;
+            emomState.startTimestamp = null;
+            emomStartBtn.textContent = "▶️ Resume";
+            setStatus("Paused. Tap start to continue.");
+            stopTicker();
+            updateDisplay();
+        };
+
+        const resetTimer = () => {
+            stopTicker();
+            emomState.elapsedMs = 0;
+            emomState.running = false;
+            emomState.startTimestamp = null;
+            emomState.lastCueSecond = null;
+            emomState.lastRound = 1;
+            emomStartBtn.textContent = "▶️ Start";
+            setStatus("Waiting to start…");
+            updateDisplay();
+        };
+
+        const syncSettings = () => {
+            const totalVal = Math.max(1, Number(emomTotalInput.value) || 20);
+            const intervalVal = Math.max(15, Number(emomIntervalInput.value) || 60);
+            emomState.totalMinutes = totalVal;
+            emomState.intervalSeconds = intervalVal;
+            emomTotalInput.value = totalVal;
+            emomIntervalInput.value = intervalVal;
+            emomState.lastRound = 1;
+            resetTimer();
+            updateMeta();
+        };
+
+        emomStartBtn.addEventListener("click", () => {
+            if (emomState.running) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        emomResetBtn.addEventListener("click", resetTimer);
+        emomTotalInput.addEventListener("change", syncSettings);
+        emomIntervalInput.addEventListener("change", syncSettings);
+
+        updateMeta();
+        updateDisplay();
+    }
 
 
     const carryBtn = document.getElementById("carry-forward-btn");
